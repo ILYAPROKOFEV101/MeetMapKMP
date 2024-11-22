@@ -4,7 +4,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import com.ilya.meetmapkmp.SocialMap.DataModel.Messageformat
+
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import io.ktor.client.*
@@ -15,7 +15,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+
+
 
 
 
