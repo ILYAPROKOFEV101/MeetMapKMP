@@ -1,0 +1,98 @@
+{
+  "project_info": {
+    "project_number": "409555274758",
+    "project_id": "meetmap-9c5dc",
+    "storage_bucket": "meetmap-9c5dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409555274758:android:28fa9bb144e183ded90787",
+        "android_client_info": {
+          "package_name": "com.ilya.MeetingMap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "409555274758-g3opklusj4iqqfc4ggiaau0u40pm4lhk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ilya.MeetingMap",
+            "certificate_hash": "804187fcfd88ce72bf4acf4e1260de975f93177f"
+          }
+        },
+        {
+          "client_id": "409555274758-u2ngus14h7p9nm5qk5snn950rimr6cv2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ilya.MeetingMap",
+            "certificate_hash": "62c5d744bdff7f33bbf6629b9c09da8ea4a67518"
+          }
+        },
+        {
+          "client_id": "409555274758-6qdljvmd0rv0sdsm7730el10n6kpfj9d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY8-GDFuC6x_bbBMnQZiCEtFmXIc-3f_U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "409555274758-6qdljvmd0rv0sdsm7730el10n6kpfj9d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "409555274758-88e3tqa6vt9mh73qeuis43l0a9f9eafe.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.IlyaProkofev.MeetApp-IOS"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:409555274758:android:820608e7b8bed125d90787",
+        "android_client_info": {
+          "package_name": "com.ilya.meetmapkmp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "409555274758-6qdljvmd0rv0sdsm7730el10n6kpfj9d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY8-GDFuC6x_bbBMnQZiCEtFmXIc-3f_U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "409555274758-6qdljvmd0rv0sdsm7730el10n6kpfj9d.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "409555274758-88e3tqa6vt9mh73qeuis43l0a9f9eafe.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.IlyaProkofev.MeetApp-IOS"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

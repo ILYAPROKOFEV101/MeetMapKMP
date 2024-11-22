@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <application
+        android:allowBackup="true"
+
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MeetMap"
+        tools:targetApi="31">
+
+        <activity
+            android:name=".SocialMap.SocialMapActivity"
+            android:exported="false"
+            android:label="@string/title_activity_social_map"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/Theme.MeetMap" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDaF5wvZj3dJFSYTZRx3XH9O_Oz8XsNETs" />
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDaF5wvZj3dJFSYTZRx3XH9O_Oz8XsNETs" />
+
+        <activity
+            android:configChanges="orientation|screenSize"
+            android:name=".Mine_menu.Map_Activity"
+            android:exported="false"
+            android:label="@string/title_activity_main_menu"
+            android:largeHeap="true"
+            android:supportsRtl="true"
+            android:theme="@style/AppTheme" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.MeetMap">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".SocialMap.DATAServices.Chat_Service.ChatWebSocketService"
+            android:exported="false" />
+
+
+    </application>
+
+</manifest>

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="420dp"
+    android:orientation="vertical"
+    android:backgroundTint="@color/alertcolor_frinds"
+    android:background="@drawable/rounded_background"
+    >
+
+
+    <nl.dionsegijn.konfetti.xml.KonfettiView
+        android:id="@+id/konfettiView"
+        android:layout_width="match_parent"
+        android:layout_height="420dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        tools:layout_editor_absoluteX="1dp"
+        tools:layout_editor_absoluteY="1dp">
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="20dp"/>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:padding="16dp"
+            android:background="?attr/selectableItemBackground">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/icon_first"
+                android:layout_width="165dp"
+                android:layout_height="165dp"
+                android:layout_gravity="center"
+                app:shapeAppearanceOverlay="@style/RoundImage"
+                tools:srcCompat="@tools:sample/avatars" />
+
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/icon_second"
+                android:layout_width="165dp"
+                android:layout_height="165dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="8dp"
+                app:shapeAppearanceOverlay="@style/RoundImage"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                tools:srcCompat="@tools:sample/avatars" />
+        </LinearLayout>
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="40dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/name_first"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Name 1"
+                android:textAlignment="center"
+                android:background="@android:color/transparent"
+                android:textSize="24sp"
+                android:textColor="@android:color/background_light"
+                android:gravity="center" />
+
+            <Space
+                android:layout_width="10dp"
+                android:layout_height="match_parent"/>
+
+            <TextView
+                android:id="@+id/name_second"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Name 2"
+                android:textAlignment="center"
+                android:background="@android:color/transparent"
+                android:textSize="24sp"
+                android:textColor="@android:color/background_light"
+                android:gravity="center" />
+
+
+        </LinearLayout>
+
+            <Space
+            android:layout_width="match_parent"
+            android:layout_height="20dp"/>
+
+
+       <LinearLayout
+           android:layout_width="match_parent"
+           android:layout_height="wrap_content"
+           android:orientation="horizontal"
+           android:layout_gravity="center"
+           >
+           <Space
+               android:layout_width="40.dp"
+               android:layout_height="match_parent"/>
+           <Button
+               android:id="@+id/person_add_first"
+               android:layout_width="0dp"
+               android:layout_height="48dp"
+               android:layout_weight="1"
+               android:textColor="@android:color/background_light"
+               android:textSize="24sp"
+               android:layout_gravity="center"
+               android:background="@drawable/rounded_corners"
+               android:hint="@string/addfriends"
+               android:src="@drawable/person_add_24px"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintEnd_toEndOf="parent"
+               android:gravity="center"
+               app:layout_constraintHorizontal_bias="0.498"
+               app:layout_constraintStart_toStartOf="parent" />
+
+           <Space
+               android:layout_width="40.dp"
+               android:layout_height="match_parent"/>
+
+           <Button
+               android:id="@+id/person_add_second"
+               android:layout_width="0dp"
+               android:layout_weight="1"
+               android:layout_height="48dp"
+               android:layout_gravity="center"
+               android:background="@drawable/rounded_corners"
+               android:gravity="center"
+               android:hint="@string/addfriends"
+               android:src="@drawable/person_add_24px"
+               android:textColor="@android:color/background_light"
+               android:textSize="24sp"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintEnd_toEndOf="parent"
+               app:layout_constraintHorizontal_bias="0.498"
+               app:layout_constraintStart_toStartOf="parent" />
+           <Space
+               android:layout_width="40.dp"
+               android:layout_height="match_parent"/>
+
+
+       </LinearLayout>
+
+
+
+
+
+    </LinearLayout>
+
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+
