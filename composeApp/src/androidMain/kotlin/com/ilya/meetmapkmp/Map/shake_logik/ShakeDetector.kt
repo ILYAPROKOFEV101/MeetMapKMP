@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.shake_logik
+package com.ilya.meetmapkmp.Map.shake_logik
 
 import android.content.Context
 import android.hardware.Sensor

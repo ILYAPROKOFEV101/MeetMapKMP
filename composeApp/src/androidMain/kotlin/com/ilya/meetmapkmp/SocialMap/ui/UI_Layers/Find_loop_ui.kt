@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ui.UI_Layers
+package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke

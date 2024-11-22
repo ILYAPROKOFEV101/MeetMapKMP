@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.Interfaces
+package com.ilya.meetmapkmp.Map.Interfaces
 
 import MapMarker
 import retrofit2.http.GET

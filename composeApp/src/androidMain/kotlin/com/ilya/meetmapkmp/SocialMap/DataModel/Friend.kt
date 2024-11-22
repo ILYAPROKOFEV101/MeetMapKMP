@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.DataModel
+package com.ilya.meetmapkmp.SocialMap.DataModel
 
 data class Friend(
     val token: String,

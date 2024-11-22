@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.Interface
+package com.ilya.meetmapkmp.SocialMap.Interface
 
 import android.content.Context
 

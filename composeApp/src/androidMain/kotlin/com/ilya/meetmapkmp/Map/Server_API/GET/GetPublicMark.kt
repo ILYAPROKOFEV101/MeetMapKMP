@@ -5,7 +5,8 @@ import MapMarker
 import android.util.Log
 
 import com.google.android.gms.maps.model.LatLng
-import com.ilya.MeetingMap.Map.Interfaces.GetPublicMark
+import com.ilya.meetmapkmp.Map.Interfaces.GetPublicMark
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit

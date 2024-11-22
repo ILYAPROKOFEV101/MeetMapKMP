@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ViewModel
+package com.ilya.meetmapkmp.SocialMap.ViewModel
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue

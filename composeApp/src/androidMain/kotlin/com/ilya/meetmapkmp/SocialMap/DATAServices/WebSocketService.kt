@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.DATAServices
+package com.ilya.meetmapkmp.SocialMap.DATAServices
 
 import android.content.Context
 import android.util.Log

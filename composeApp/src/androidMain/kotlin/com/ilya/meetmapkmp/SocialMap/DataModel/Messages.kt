@@ -1,10 +1,10 @@
-package com.ilya.MeetingMap.SocialMap.DataModel
+package com.ilya.meetmapkmp.SocialMap.DataModel
 
 import kotlinx.serialization.Serializable
 
 
 @Serializable
-data class Messages(
+data class Messages_Chat(
     val content: String? = null,
     val profilerIMG: String? = null,
     val messageTime: Long? = null,

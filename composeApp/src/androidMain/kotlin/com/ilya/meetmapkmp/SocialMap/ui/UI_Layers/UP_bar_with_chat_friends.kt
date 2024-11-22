@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ui.UI_Layers
+package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box

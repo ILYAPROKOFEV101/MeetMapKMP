@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.ui.theme
+package com.ilya.meetmapkmp.Map.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

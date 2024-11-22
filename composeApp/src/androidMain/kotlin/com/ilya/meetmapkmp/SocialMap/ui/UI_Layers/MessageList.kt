@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
@@ -83,12 +84,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
-import com.ilya.MeetingMap.SocialMap.DataModel.Messages
-import com.ilya.MeetingMap.SocialMap.ViewModel.ChatViewModel
+import com.google.firebase.storage.FirebaseStorage
+
 import com.ilya.meetmapkmp.R
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+
+import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -98,6 +105,8 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
+
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: String, my_key: String) {
 
@@ -150,7 +159,7 @@ fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: Strin
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MessageCard(message: Messages, my_key: String, my_avatar: Painter, username: String) {
+fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, username: String) {
     val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
     val Notmy_message_color = if (isSystemInDarkTheme()) Color(0xFFFFFFFF)
     else Color(0xFF303133)
@@ -247,21 +256,16 @@ fun MessageCard(message: Messages, my_key: String, my_avatar: Painter, username:
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Material_text_filed(chatViewModel: ChatViewModel) {
+    val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
-    var selectedMediaUri by remember { mutableStateOf<Uri?>(null) }
-    var isVideo by remember { mutableStateOf(false) }
 
-    val context = LocalContext.current
-
-    // Лаунчер для выбора изображения или видео из галереи
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
         onResult = { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val uri = result.data?.data
                 uri?.let {
-                    selectedMediaUri = it
-                    isVideo = isVideoFile(context, it)
+                    uploadToFirebase(it, context)
                 }
             }
         }
@@ -271,14 +275,12 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
         Modifier
             .fillMaxWidth()
             .height(60.dp)
-    )
-    {
+    ) {
         IconButton(
             modifier = Modifier
                 .weight(0.1f)
-                .align(Alignment.CenterVertically), // Выравнивание по центру вертикально
+                .align(Alignment.CenterVertically),
             onClick = {
-
                 // Запуск галереи
                 val intent = Intent(Intent.ACTION_PICK).apply {
                     type = "image/*"
@@ -298,21 +300,21 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
             modifier = Modifier
                 .weight(0.7f)
                 .height(80.dp),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface, // Цвет контейнера при фокусе
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface, // Цвет контейнера без фокуса
-                disabledContainerColor = MaterialTheme.colorScheme.surface, // Цвет контейнера, когда поле недоступно
-                cursorColor = MaterialTheme.colorScheme.onSurface, // Цвет курсора
-                focusedTextColor = MaterialTheme.colorScheme.onSurface, // Цвет текста при фокусе
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface // Цвет текста без фокуса
-            ),
-            maxLines = 10,
 
-            )
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = Color.White, // Цвет контейнера при фокусе
+                unfocusedContainerColor = Color.White, // Цвет контейнера без фокуса
+                disabledContainerColor = Color.White, // Цвет контейнера, когда поле недоступно
+                cursorColor = Color.White, // Цвет курсора
+                focusedTextColor = Color.White, // Цвет текста при фокусе
+                unfocusedTextColor = Color.White // Цвет текста без фокуса
+            ),
+            maxLines = 10
+        )
         IconButton(
             modifier = Modifier
                 .weight(0.1f)
-                .align(Alignment.CenterVertically), // Выравнивание по центру вертикально
+                .align(Alignment.CenterVertically),
             onClick = {
                 chatViewModel.sendMessage(
                     text.toString(),
@@ -329,26 +331,35 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 contentDescription = "Send"
             )
         }
-
-        selectedMediaUri?.let { uri ->
-            if (isVideo) {
-                // Отображаем миниатюру видео
-                VideoThumbnail(uri = uri)
-            } else {
-                // Отображаем изображение
-                Image(
-                    painter = rememberAsyncImagePainter(uri),
-                    contentDescription = "Selected Image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(top = 8.dp)
-                )
-            }
-        }
     }
 }
 
+fun uploadToFirebase(uri: Uri, context: Context) {
+    val storageRef = FirebaseStorage.getInstance().reference
+    val fileName = uri.lastPathSegment ?: "file_${System.currentTimeMillis()}"
+    val fileRef = storageRef.child("uploads/$fileName")
+
+    // Добавление логов
+    Log.d("Upload", "Начало загрузки файла: $fileName")
+
+    fileRef.putFile(uri)
+        .addOnSuccessListener { taskSnapshot ->
+            Log.d("Upload", "Файл успешно загружен: ${taskSnapshot.metadata?.path}")
+            fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
+                Log.d("Upload", "Ссылка на файл: $downloadUri")
+                Toast.makeText(context, "Фото загружено!", Toast.LENGTH_SHORT).show()
+            }
+        }
+        .addOnFailureListener { exception ->
+            Log.e("Upload", "Ошибка загрузки файла: ${exception.message}")
+            Toast.makeText(context, "Ошибка загрузки: ${exception.message}", Toast.LENGTH_SHORT).show()
+        }
+        .addOnProgressListener { taskSnapshot ->
+            val progress =
+                (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
+            Log.d("Upload", "Прогресс загрузки: $progress%")
+        }
+}
 
 // Функция для проверки, является ли файл видео
 private fun isVideoFile(context: Context, uri: Uri): Boolean {

@@ -1,11 +1,13 @@
-package com.ilya.MeetingMap.SocialMap.ViewModel
+package com.ilya.meetmapkmp.SocialMap.ViewModel
+
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-
-import com.ilya.MeetingMap.SocialMap.DataModel.Messageformat
-import com.ilya.MeetingMap.SocialMap.DataModel.Messages
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
+
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messageformat
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -15,8 +17,8 @@ import kotlinx.serialization.json.Json
 
 class ChatViewModel : ViewModel() {
 
-    private val _messages = MutableStateFlow<List<Messages>>(emptyList())
-    val messages: StateFlow<List<Messages>> get() = _messages
+    private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
+    val messages: StateFlow<List<Messages_Chat>> get() = _messages
 
     private val chatService = ChatWebSocketService()
 

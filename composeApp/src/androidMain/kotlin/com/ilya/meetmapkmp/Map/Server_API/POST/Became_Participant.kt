@@ -1,7 +1,8 @@
-package com.ilya.MeetingMap.Map.Server_API.POST
+package com.ilya.meetmapkmp.Map.Server_API.POST
 
 import android.util.Log
 import com.ilya.MeetingMap.Map.Interfaces.Became_Participant
+
 import retrofit2.Retrofit
 
 

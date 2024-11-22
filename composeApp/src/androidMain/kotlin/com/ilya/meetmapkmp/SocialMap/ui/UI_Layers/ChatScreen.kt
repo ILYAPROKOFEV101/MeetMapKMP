@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ui.UI_Layers
+package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,8 +16,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.ilya.MeetingMap.SocialMap.DataModel.Messages
-import com.ilya.MeetingMap.SocialMap.ViewModel.ChatViewModel
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+
+import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
 
 @Composable
 fun ChatScreen(chatViewModel: ChatViewModel) {
@@ -54,7 +55,7 @@ fun ChatScreen(chatViewModel: ChatViewModel) {
 }
 
 @Composable
-fun MessageItem(message: Messages) {
+fun MessageItem(message: Messages_Chat) {
     Column {
         Text(text = "${message.senderUsername}: ${message.content}")
         // Если нужно, добавьте изображение или другие элементы

@@ -14,8 +14,9 @@ import nl.dionsegijn.konfetti.core.models.Shape
 import nl.dionsegijn.konfetti.core.models.Size
 import com.ilya.meetmapkmp.R
 import com.bumptech.glide.Glide
-import com.ilya.MeetingMap.Map.DataModel.Friends_type
-import com.ilya.MeetingMap.Map.Server_API.POST.addFriends
+import com.ilya.meetmapkmp.Map.DataModel.Friends_type
+import com.ilya.meetmapkmp.Map.Server_API.POST.addFriends
+
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

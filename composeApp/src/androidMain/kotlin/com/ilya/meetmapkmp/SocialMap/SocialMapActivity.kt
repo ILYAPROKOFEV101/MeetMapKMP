@@ -28,22 +28,22 @@ import androidx.navigation.compose.rememberNavController
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.firebase.crashlytics.buildtools.reloc.com.google.common.reflect.TypeToken
 import com.google.gson.Gson
-import com.ilya.MeetingMap.SocialMap.DataModel.Friend
+import com.ilya.meetmapkmp.SocialMap.DataModel.Friend
 
-import com.ilya.MeetingMap.SocialMap.ViewModel.FriendsViewModel
-import com.ilya.MeetingMap.SocialMap.DATAServices.WebSocketListenerCallback
-
-
-import com.ilya.MeetingMap.SocialMap.DATAServices.WebSocketService
-
-import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.Chat_fragment
-import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.FindFriends
-import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.FriendsScreen
-import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.Loop
-import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.MyFragmentContainer
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
+import com.ilya.meetmapkmp.SocialMap.DATAServices.WebSocketListenerCallback
 
 
-import com.ilya.MeetingMap.SocialMap.ui.theme.SocialMap
+import com.ilya.meetmapkmp.SocialMap.DATAServices.WebSocketService
+
+import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.Chat_fragment
+import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.FindFriends
+import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.FriendsScreen
+import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.Loop
+import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.MyFragmentContainer
+
+
+import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 
 import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient

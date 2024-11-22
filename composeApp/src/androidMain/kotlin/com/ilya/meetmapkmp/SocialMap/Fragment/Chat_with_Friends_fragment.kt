@@ -19,11 +19,11 @@ import androidx.lifecycle.ViewModelProvider
 import com.google.android.gms.auth.api.identity.Identity
 
 
-import com.ilya.MeetingMap.SocialMap.Interface.MyDataProvider
-import com.ilya.MeetingMap.SocialMap.ViewModel.ChatViewModel
-import com.ilya.MeetingMap.SocialMap.ViewModel.FriendsViewModel
+import com.ilya.meetmapkmp.SocialMap.Interface.MyDataProvider
+import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.MessageList
-import com.ilya.MeetingMap.SocialMap.ui.theme.SocialMap
+import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.profile.IMG
 import com.ilya.codewithfriends.presentation.profile.UID

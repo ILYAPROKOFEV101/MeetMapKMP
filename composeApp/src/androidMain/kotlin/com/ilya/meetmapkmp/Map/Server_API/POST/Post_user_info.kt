@@ -1,5 +1,5 @@
 import android.util.Log
-import com.ilya.MeetingMap.Map.Interfaces.Post_user_info
+import com.ilya.meetmapkmp.Map.Interfaces.Post_user_info
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response

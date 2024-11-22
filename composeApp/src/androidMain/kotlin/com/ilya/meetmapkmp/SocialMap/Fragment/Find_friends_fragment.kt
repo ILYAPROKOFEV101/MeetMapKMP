@@ -63,19 +63,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 
 import com.google.android.gms.auth.api.identity.Identity
 
-import com.ilya.MeetingMap.SocialMap.DATAServices.Find_Frinds_by_websocket.WebSocketCallback_frinds
-import com.ilya.MeetingMap.SocialMap.ui.theme.SocialMap
+import com.ilya.meetmapkmp.SocialMap.DATAServices.Find_Frinds_by_websocket.WebSocketCallback_frinds
+import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 
 import coil.compose.rememberAsyncImagePainter
-import com.ilya.MeetingMap.Map.Server_API.POST.addFriends
+import com.ilya.meetmapkmp.Map.Server_API.POST.addFriends
 import com.ilya.MeetingMap.SocialMap.DataModel.FindFriends
-import com.ilya.MeetingMap.SocialMap.ViewModel.FriendsViewModel
-import com.ilya.MeetingMap.SocialMap.ViewModel.FriendsViewModel_data
-import com.ilya.MeetingMap.SocialMap.ui.theme.robotomedium
+
 import com.ilya.meetmapkmp.R
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel_data
+import com.ilya.meetmapkmp.SocialMap.ui.theme.robotomedium
 import kotlinx.coroutines.*
 import postRequestAddFriends
 

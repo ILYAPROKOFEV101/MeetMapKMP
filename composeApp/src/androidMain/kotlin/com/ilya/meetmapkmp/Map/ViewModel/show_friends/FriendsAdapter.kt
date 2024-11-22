@@ -5,7 +5,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
-import com.ilya.MeetingMap.Map.DataModel.Friends_type
+import com.ilya.meetmapkmp.Map.DataModel.Friends_type
 import com.ilya.meetmapkmp.R
 
 

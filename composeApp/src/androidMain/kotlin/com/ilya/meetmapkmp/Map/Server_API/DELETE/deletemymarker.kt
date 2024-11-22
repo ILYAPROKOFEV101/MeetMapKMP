@@ -1,4 +1,4 @@
-import com.ilya.MeetingMap.Map.Interfaces.Delete_My_Marker
+import com.ilya.meetmapkmp.Map.Interfaces.Delete_My_Marker
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

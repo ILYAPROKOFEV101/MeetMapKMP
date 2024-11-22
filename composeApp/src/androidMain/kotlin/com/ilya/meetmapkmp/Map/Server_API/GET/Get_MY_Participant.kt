@@ -1,5 +1,5 @@
 import android.util.Log
-import com.ilya.MeetingMap.Map.Interfaces.Get_MY_Participant
+import com.ilya.meetmapkmp.Map.Interfaces.Get_MY_Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException

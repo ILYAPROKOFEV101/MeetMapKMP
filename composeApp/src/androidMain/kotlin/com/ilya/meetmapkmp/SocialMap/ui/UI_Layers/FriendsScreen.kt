@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ui.UI_Layers
+package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -37,11 +37,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.google.api.Context
-import com.ilya.MeetingMap.SocialMap.DataModel.Friend
-import com.ilya.MeetingMap.SocialMap.Interface.MyDataProvider
+import com.ilya.meetmapkmp.SocialMap.DataModel.Friend
+import com.ilya.meetmapkmp.SocialMap.Interface.MyDataProvider
 
 
-import com.ilya.MeetingMap.SocialMap.ViewModel.FriendsViewModel
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 
 
 @Composable

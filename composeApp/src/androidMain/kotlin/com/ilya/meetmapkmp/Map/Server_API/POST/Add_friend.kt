@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.Server_API.POST
+package com.ilya.meetmapkmp.Map.Server_API.POST
 
 import AddFriendsService
 import android.util.Log

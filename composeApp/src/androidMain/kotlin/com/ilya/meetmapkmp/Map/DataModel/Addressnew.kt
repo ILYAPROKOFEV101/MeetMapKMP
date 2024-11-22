@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.DataModel
+package com.ilya.meetmapkmp.Map.DataModel
 
 data class Addressnew(
     val road: String?,       // Название улицы (может быть null)

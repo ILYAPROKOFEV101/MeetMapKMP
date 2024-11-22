@@ -147,6 +147,7 @@ kotlin {
 
             // optional - Paging 3 Integration
             implementation(libs.androidx.room.paging)
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             implementation (libs.androidx.core.splashscreen)
             implementation ("com.google.firebase:firebase-auth-ktx:23.1.0") // Проверьте актуальную версию
 

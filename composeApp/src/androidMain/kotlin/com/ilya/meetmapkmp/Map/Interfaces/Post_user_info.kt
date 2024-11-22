@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.Interfaces
+package com.ilya.meetmapkmp.Map.Interfaces
 
 import Post_User_info_data
 import retrofit2.Call

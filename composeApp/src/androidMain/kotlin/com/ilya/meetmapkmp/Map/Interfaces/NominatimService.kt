@@ -1,6 +1,7 @@
 package com.ilya.MeetingMap.Map.Interfaces
 
-import com.ilya.MeetingMap.Map.DataModel.NominatimResponse
+
+import com.ilya.meetmapkmp.Map.DataModel.NominatimResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 

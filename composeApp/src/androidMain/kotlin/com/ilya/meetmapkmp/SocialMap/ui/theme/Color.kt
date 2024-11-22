@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ui.theme
+package com.ilya.meetmapkmp.SocialMap.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

@@ -3,7 +3,7 @@ import android.content.Context
 import android.util.Log
 import android.widget.ArrayAdapter
 import android.widget.ListView
-import com.ilya.MeetingMap.Map.DataModel.Friends_type
+import com.ilya.meetmapkmp.Map.DataModel.Friends_type
 
 
 fun show_friends_more(uid: String,key: String,context: Context, data: List<Friends_type>) {

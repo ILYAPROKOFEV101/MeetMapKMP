@@ -4,8 +4,9 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import com.ilya.MeetingMap.SocialMap.DataModel.Messageformat
-import com.ilya.MeetingMap.SocialMap.DataModel.Messages
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messageformat
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+
 import io.ktor.client.*
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.websocket.*
@@ -22,8 +23,8 @@ class ChatWebSocketService : Service() {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var webSocketSession: DefaultClientWebSocketSession? = null
-    private val _messages = MutableStateFlow<List<Messages>>(emptyList())
-    val messages: StateFlow<List<Messages>> = _messages
+    private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
+    val messages: StateFlow<List<Messages_Chat>> = _messages
     private val httpClient = HttpClient(CIO) {
         install(WebSockets)
     }
@@ -73,8 +74,8 @@ class ChatWebSocketService : Service() {
         ignoreUnknownKeys = true // Игнорируем неизвестные ключи
     }     // Метод для парсинга JSON в объект Messages
 
-    private fun parseMessage(json: String): Messages {
-        return jsoname.decodeFromString<Messages>(json) // Используем настроенный Json
+    private fun parseMessage(json: String): Messages_Chat {
+        return jsoname.decodeFromString<Messages_Chat>(json) // Используем настроенный Json
     }
 
     // Метод для подключения к WebSocket

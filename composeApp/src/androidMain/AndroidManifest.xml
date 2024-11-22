@@ -54,7 +54,7 @@
         </activity>
 
         <service
-            android:name=".SocialMap.DATAServices.Chat_Service.ChatWebSocketService"
+            android:name="com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService"
             android:exported="false" />
 
 

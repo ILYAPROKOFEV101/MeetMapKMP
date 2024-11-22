@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.Interfaces
+package com.ilya.meetmapkmp.Map.Interfaces
 
 import retrofit2.http.DELETE
 import retrofit2.http.Path

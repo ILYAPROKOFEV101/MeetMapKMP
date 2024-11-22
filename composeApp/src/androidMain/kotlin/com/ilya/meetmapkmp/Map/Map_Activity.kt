@@ -1,7 +1,7 @@
 package com.ilya.meetmapkmp.Mine_menu
 
 
-import com.ilya.MeetingMap.Map.Server_API.POST.Became_Participant_fun
+import com.ilya.meetmapkmp.Map.Server_API.POST.Became_Participant_fun
 import MapMarker
 import MarkerAdapter
 import MarkerData
@@ -58,12 +58,14 @@ import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.ilya.MeetingMap.Map.DataModel.Friends_type
-import com.ilya.MeetingMap.Map.Interfaces.WebSocketCallback
 import com.ilya.MeetingMap.Map.Server_API.GET.getPublicMarker
-import com.ilya.MeetingMap.Map.Server_API.WebSocketClient.WebSocketClient
 import com.ilya.MeetingMap.Map.ViewModel.show_friends.show_friends_one
-import com.ilya.MeetingMap.Map.shake_logik.ShakeDetector
+import com.ilya.meetmapkmp.Map.DataModel.Friends_type
+import com.ilya.meetmapkmp.Map.Interfaces.WebSocketCallback
+
+import com.ilya.meetmapkmp.Map.Server_API.WebSocketClient.WebSocketClient
+
+import com.ilya.meetmapkmp.Map.shake_logik.ShakeDetector
 
 
 

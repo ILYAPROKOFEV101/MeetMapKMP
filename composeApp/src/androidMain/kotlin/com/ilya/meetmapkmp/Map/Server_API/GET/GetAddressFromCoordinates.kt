@@ -1,7 +1,8 @@
-package com.ilya.MeetingMap.Map.Server_API.GET
+package com.ilya.meetmapkmp.Map.Server_API.GET
 
 import android.util.Log
 import com.ilya.MeetingMap.Map.Interfaces.NominatimService
+
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 

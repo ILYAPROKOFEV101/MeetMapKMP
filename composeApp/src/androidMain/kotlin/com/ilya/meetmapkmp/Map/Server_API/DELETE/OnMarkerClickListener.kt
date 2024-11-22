@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.Server_API.DELETE
+package com.ilya.meetmapkmp.Map.Server_API.DELETE
 
 import android.util.Log
 import kotlinx.coroutines.Dispatchers

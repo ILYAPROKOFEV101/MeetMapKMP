@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.Map.Server_API.WebSocketClient
+package com.ilya.meetmapkmp.Map.Server_API.WebSocketClient
 
 import android.os.Handler
 import android.os.Looper

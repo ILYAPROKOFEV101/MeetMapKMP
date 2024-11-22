@@ -1,5 +1,5 @@
 import android.util.Log
-import com.ilya.MeetingMap.SocialMap.DATAServices.Find_Frinds_by_websocket.WebSocketCallback_frinds
+import com.ilya.meetmapkmp.SocialMap.DATAServices.Find_Frinds_by_websocket.WebSocketCallback_frinds
 import com.ilya.MeetingMap.SocialMap.DataModel.FindFriends
 import okhttp3.OkHttpClient
 import okhttp3.Request
