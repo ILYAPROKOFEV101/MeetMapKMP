@@ -10,7 +10,9 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.googleGmsGoogleServices)
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10" // Используйте актуальную версию
 }
+
 
 kotlin {
     androidTarget {

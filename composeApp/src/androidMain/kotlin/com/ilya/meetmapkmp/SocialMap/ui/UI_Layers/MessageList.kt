@@ -1,4 +1,4 @@
-package com.ilya.MeetingMap.SocialMap.ui.UI_Layers
+package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
 import android.app.Activity
 import android.content.ContentResolver
@@ -306,8 +306,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 unfocusedContainerColor = Color.White, // Цвет контейнера без фокуса
                 disabledContainerColor = Color.White, // Цвет контейнера, когда поле недоступно
                 cursorColor = Color.White, // Цвет курсора
-                focusedTextColor = Color.White, // Цвет текста при фокусе
-                unfocusedTextColor = Color.White // Цвет текста без фокуса
+
             ),
             maxLines = 10
         )

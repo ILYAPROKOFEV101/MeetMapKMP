@@ -22,13 +22,14 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.ilya.meetmapkmp.SocialMap.Interface.MyDataProvider
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
 import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
-import com.ilya.MeetingMap.SocialMap.ui.UI_Layers.MessageList
+
 import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.profile.IMG
 import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
+import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.MessageList
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 
 
