@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>409555274758-rug0sl2g5b7uqrn1bidrc0np8bpfst0b.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.409555274758-rug0sl2g5b7uqrn1bidrc0np8bpfst0b</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>409555274758-u2ngus14h7p9nm5qk5snn950rimr6cv2.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyDgaVSk0-J7qDacvOmyOJ4FlCza8bWeXT4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>409555274758</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.IlyaProkofev.MeetMap-ios-next</string>
+	<key>PROJECT_ID</key>
+	<string>meetmap-9c5dc</string>
+	<key>STORAGE_BUCKET</key>
+	<string>meetmap-9c5dc.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:409555274758:ios:f6073c695b7fe138d90787</string>
+</dict>
+</plist>
