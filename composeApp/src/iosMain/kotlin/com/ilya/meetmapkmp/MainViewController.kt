@@ -1,5 +1,14 @@
 package com.ilya.meetmapkmp
 
-import androidx.compose.ui.window.ComposeUIViewController
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+import kotlinx.coroutines.flow.StateFlow
 
-fun MainViewController() = ComposeUIViewController { App() }
+interface WebSocketInterface {
+    val messages: StateFlow<List<Messages_Chat>>
+    fun connect()
+    fun sendMessage(message: Messages_Chat)
+    fun disconnect()
+}
+
+
+

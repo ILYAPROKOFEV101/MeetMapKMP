@@ -1,0 +1,118 @@
+package com.ilya.meetmapkmp
+
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+import io.ktor.client.* // Ktor клиент для взаимодействия с HTTP/WebSocket
+import io.ktor.client.plugins.websocket.*
+
+import io.ktor.websocket.* // Работа с WebSocket
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+
+/**
+ * Класс для работы с WebSocket на Android и iOS (Kotlin Multiplatform).
+ */
+class WebSocketClient(
+    private val serverUrl: String // Полный URL подключения: "ws://example.com:8080/chat"
+) {
+    // Инициализация Ktor HttpClient с поддержкой WebSocket
+    private val client = HttpClient {
+        install(WebSockets)
+    }
+
+    // Поток для хранения сообщений
+    private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
+    val messages: StateFlow<List<Messages_Chat>> = _messages.asStateFlow()
+
+    private var session: DefaultClientWebSocketSession? = null
+    private val coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+
+    /**
+     * Подключение к WebSocket серверу.
+     */
+    fun connect() {
+        coroutineScope.launch {
+            try {
+                client.webSocket(serverUrl) {
+                    session = this
+                    listenToMessages() // Входящие сообщения
+                }
+            } catch (e: Exception) {
+                println("Ошибка подключения: ${e.message}")
+                reconnect() // Переподключение
+            }
+        }
+    }
+
+    /**
+     * Прослушивание сообщений от сервера.
+     */
+    private suspend fun listenToMessages() {
+        try {
+            for (frame in session?.incoming ?: return) {
+                val text = (frame as? Frame.Text)?.readText()
+                text?.let { messageJson ->
+                    processIncomingMessage(messageJson) // Обработка JSON сообщения
+                }
+            }
+        } catch (e: Exception) {
+            println("Ошибка при чтении сообщений: ${e.message}")
+            reconnect()
+        }
+    }
+
+    /**
+     * Десериализация сообщения из JSON и обновление StateFlow.
+     */
+    private fun processIncomingMessage(messageJson: String) {
+        try {
+            val message = Json.decodeFromString<Messages_Chat>(messageJson)
+            _messages.update { it + message }
+        } catch (e: Exception) {
+            println("Ошибка парсинга JSON: ${e.message}")
+        }
+    }
+
+    /**
+     * Отправка сообщения в формате JSON на сервер.
+     */
+    fun sendMessage(message: Messages_Chat) {
+        coroutineScope.launch {
+            try {
+                val messageJson = Json.encodeToString(message)
+                session?.send(Frame.Text(messageJson))
+            } catch (e: Exception) {
+                println("Ошибка отправки сообщения: ${e.message}")
+            }
+        }
+    }
+
+    /**
+     * Закрытие WebSocket-сессии.
+     */
+    fun disconnect() {
+        coroutineScope.launch {
+            try {
+                session?.close()
+                session = null
+            } catch (e: Exception) {
+                println("Ошибка при закрытии соединения: ${e.message}")
+            }
+        }
+    }
+
+
+    /**
+     * Переподключение к серверу при разрыве соединения.
+     */
+    private fun reconnect() {
+        disconnect()
+        connect()
+    }
+}
+
+

@@ -57,6 +57,7 @@ kotlin {
     
     sourceSets {
         val desktopMain by getting
+        val ktor_version = "3.0.1"
         
         androidMain.dependencies {
             implementation(compose.preview)
@@ -156,6 +157,10 @@ kotlin {
 
         }
         commonMain.dependencies {
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3") // Сериализация
+            implementation("io.ktor:ktor-client-core:$ktor_version")
+            implementation("io.ktor:ktor-client-websockets:$ktor_version")
+            implementation("io.ktor:ktor-client-logging:$ktor_version")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
@@ -169,6 +174,10 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
         }
+        iosMain.dependencies {
+            implementation("io.ktor:ktor-client-ios:$ktor_version") // Native iOS client
+        }
+
     }
 }
 
@@ -202,7 +211,9 @@ android {
 dependencies {
     implementation(libs.firebase.auth)
     debugImplementation(compose.uiTooling)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
+
 
 compose.desktop {
     application {
