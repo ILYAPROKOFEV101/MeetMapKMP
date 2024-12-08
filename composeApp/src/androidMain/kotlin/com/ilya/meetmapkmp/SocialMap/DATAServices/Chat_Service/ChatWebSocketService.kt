@@ -1,141 +1,108 @@
 package com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service
 
+
+
+
+
+
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
-
-import io.ktor.client.*
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.websocket.*
-import io.ktor.websocket.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-
-
-
-
+import okhttp3.*
+import okio.ByteString
+import java.util.concurrent.TimeUnit
 
 class ChatWebSocketService : Service() {
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private var webSocketSession: DefaultClientWebSocketSession? = null
     private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
     val messages: StateFlow<List<Messages_Chat>> = _messages
-    private val httpClient = HttpClient(CIO) {
-        install(WebSockets)
-    }
-    // Определяем session как глобальную переменную
-    var open_session: WebSocketSession? = null
-        private set // Ограничиваем доступ на изменение снаружи
+    private val client = OkHttpClient.Builder()
+        .readTimeout(0, TimeUnit.MILLISECONDS) // Неограниченное время ожидания сообщений
+        .build()
+    private var webSocket: WebSocket? = null
 
-    // Логирование для отладки
     private val TAG = "ChatWebSocketService"
 
-    // Метод для переключения соединения на новый URL
-    fun switchConnection(newUrl: String) {
-        Log.d(TAG, "Switching connection to: $newUrl")
-        coroutineScope.launch {
-            // Закрываем текущее соединение, если оно существует
-            webSocketSession?.close(CloseReason(CloseReason.Codes.NORMAL, "Switching to new URL"))
-            webSocketSession = null
-
-            try {
-                // Подключаемся к новому URL
-                webSocketSession = httpClient.webSocketSession(urlString = newUrl).also { session ->
-                    Log.d(TAG, "Successfully connected to $newUrl")
-                    receiveMessages(session)
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error switching connection: ${e.message}", e)
-            }
-        }
-    }
-// hello world
-    suspend fun receiveMessages(session: WebSocketSession) {
-        try {
-            for (message in session.incoming) {
-                if (message is Frame.Text) {
-                    val json = message.readText()
-                    val receivedMessage = parseMessage(json)
-                    Log.d(TAG, "Received message: $receivedMessage")
-                    _messages.emit(_messages.value + receivedMessage)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error receiving messages: ${e.message}", e)
-        }
-    }
-
-    private val jsoname = Json {
-        ignoreUnknownKeys = true // Игнорируем неизвестные ключи
-    }     // Метод для парсинга JSON в объект Messages
-
-    private fun parseMessage(json: String): Messages_Chat {
-        return jsoname.decodeFromString<Messages_Chat>(json) // Используем настроенный Json
-    }
-
-    // Метод для подключения к WebSocket
     fun connectToWebSocket(url: String) {
         Log.d(TAG, "Connecting to WebSocket at: $url")
-        coroutineScope.launch {
-            try {
-                webSocketSession = httpClient.webSocketSession(urlString = url).also { session ->
-                    Log.d(TAG, "Successfully connected to WebSocket at $url")
-                    open_session = session
-                    receiveMessages(session) // Получение сообщений при подключении
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error connecting to WebSocket: ${e.message}", e) // Обработка ошибок подключения
-            }
-        }
+        val request = Request.Builder().url(url).build()
+        webSocket = client.newWebSocket(request, WebSocketListenerImpl())
     }
 
     fun sendMessage(jsonMessage: String) {
-        coroutineScope.launch(Dispatchers.IO) {
-            try {
-                if (open_session!!.isActive) {
-                    open_session!!.send(Frame.Text(jsonMessage))
+        coroutineScope.launch {
+            webSocket?.let { socket ->
+                val success = socket.send(jsonMessage)
+                if (success) {
                     Log.d(TAG, "Сообщение отправлено: $jsonMessage")
                 } else {
-                    Log.e(TAG, "Соединение не активно, переподключение...")
+                    Log.e(TAG, "Не удалось отправить сообщение")
                 }
-            } catch (e: Exception){
-                Log.d(TAG, "Error sending message: ${e.message}")
-            }
+            } ?: Log.e(TAG, "WebSocket не подключён")
         }
     }
 
     fun disconnect() {
         Log.d(TAG, "Disconnecting from WebSocket")
-        coroutineScope.launch {
-            webSocketSession?.close(CloseReason(CloseReason.Codes.NORMAL, "Disconnecting"))
-            webSocketSession = null
-            Log.d(TAG, "Disconnected from WebSocket")
-        }
+        webSocket?.close(1000, "Disconnecting")
+        webSocket = null
     }
 
-    fun broadcastMessage(message: String) {
-        val intent = Intent("com.ilya.MeetingMap.NEW_MESSAGE")
-        intent.putExtra("message_content", message)
-        applicationContext.sendBroadcast(intent) // Применение applicationContext вместо context
-        Log.d(TAG, "Broadcasting message: $message")
+    fun switchConnection(newUrl: String) {
+        Log.d(TAG, "Switching connection to: $newUrl")
+        disconnect()
+        connectToWebSocket(newUrl)
     }
 
     override fun onDestroy() {
         Log.d(TAG, "Service destroyed")
-        disconnect() // Используйте disconnect для закрытия соединения
-        coroutineScope.cancel() // Отменяем корутины
+        disconnect()
+        coroutineScope.cancel()
         super.onDestroy()
     }
 
-    override fun onBind(intent: Intent?): IBinder? {
-        return null
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    private inner class WebSocketListenerImpl : WebSocketListener() {
+        override fun onOpen(webSocket: WebSocket, response: Response) {
+            Log.d(TAG, "WebSocket connection opened")
+        }
+
+        override fun onMessage(webSocket: WebSocket, text: String) {
+            Log.d(TAG, "Received text message: $text")
+            val receivedMessage = parseMessage(text)
+            coroutineScope.launch {
+                _messages.emit(_messages.value + receivedMessage)
+            }
+        }
+
+        override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+            Log.d(TAG, "Received binary message: ${bytes.hex()}")
+        }
+
+        override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+            Log.d(TAG, "WebSocket is closing: $reason")
+            webSocket.close(code, reason)
+        }
+
+        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
+            Log.d(TAG, "WebSocket closed: $reason")
+        }
+
+        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+            Log.e(TAG, "WebSocket error: ${t.message}", t)
+        }
+    }
+
+    private fun parseMessage(json: String): Messages_Chat {
+        val jsoname = kotlinx.serialization.json.Json { ignoreUnknownKeys = true }
+        return jsoname.decodeFromString(Messages_Chat.serializer(), json)
     }
 }
+

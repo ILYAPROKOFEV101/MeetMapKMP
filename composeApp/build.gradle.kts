@@ -12,7 +12,7 @@ plugins {
     alias(libs.plugins.googleGmsGoogleServices)
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10" // Используйте актуальную версию
 }
-
+val ktor_version = "3.0.1"
 
 kotlin {
     androidTarget {
@@ -57,9 +57,9 @@ kotlin {
     
     sourceSets {
         val desktopMain by getting
-        val ktor_version = "3.0.1"
         
         androidMain.dependencies {
+            implementation(libs.ktor.client.okhttp)
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.core.ktx)
@@ -157,10 +157,10 @@ kotlin {
 
         }
         commonMain.dependencies {
-            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3") // Сериализация
-            implementation("io.ktor:ktor-client-core:$ktor_version")
+            implementation("io.ktor:ktor-client-core:3.0.1")
+            implementation("io.ktor:ktor-client-websockets:3.0.1")
+            implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             implementation("io.ktor:ktor-client-websockets:$ktor_version")
-            implementation("io.ktor:ktor-client-logging:$ktor_version")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material)
@@ -170,14 +170,13 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtime.compose)
         }
+        iosMain.dependencies {
+            implementation("io.ktor:ktor-client-darwin:2.3.4")
+        }
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutines.swing)
         }
-        iosMain.dependencies {
-            implementation("io.ktor:ktor-client-ios:$ktor_version") // Native iOS client
-        }
-
     }
 }
 
@@ -211,9 +210,7 @@ android {
 dependencies {
     implementation(libs.firebase.auth)
     debugImplementation(compose.uiTooling)
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 }
-
 
 compose.desktop {
     application {

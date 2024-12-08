@@ -9,11 +9,11 @@
 /* Begin PBXBuildFile section */
 		3C21839C2C55C71800B15B30 /* CustomMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21839B2C55C71800B15B30 /* CustomMapView.swift */; };
 		3C21839E2C55CAF000B15B30 /* AlertHelperView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C21839D2C55CAF000B15B30 /* AlertHelperView.swift */; };
+		3C24EC182CFE084C00CAC6C8 /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C24EC172CFE084500CAC6C8 /* Server.swift */; };
 		3C2C9BBA2C582EED00EAD5CA /* MarkerData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2C9BB92C582EED00EAD5CA /* MarkerData.swift */; };
 		3C2C9BBC2C58308500EAD5CA /* MarkerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C2C9BBB2C58308500EAD5CA /* MarkerStore.swift */; };
 		3C326B5F2C58F88700F377A8 /* dataMarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C326B5E2C58F88700F377A8 /* dataMarkView.swift */; };
 		3C5BE5AF2C69197200C7031A /* findlocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C5BE5AE2C69197200C7031A /* findlocation.swift */; };
-		3C6E10E12CF76C8D008DD02D /* MeetMap-ios-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3C896A4A2C528F6D00C15A28 /* MeetMap-ios-Info.plist */; };
 		3C78D1292C623EA9001006A0 /* Post_Mark_requast.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C78D1282C623EA9001006A0 /* Post_Mark_requast.swift */; };
 		3C896A322C52878700C15A28 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C896A312C52878700C15A28 /* Assets.xcassets */; };
 		3C896A352C52878700C15A28 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3C896A342C52878700C15A28 /* Preview Assets.xcassets */; };
@@ -50,6 +50,7 @@
 /* Begin PBXFileReference section */
 		3C21839B2C55C71800B15B30 /* CustomMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomMapView.swift; sourceTree = "<group>"; };
 		3C21839D2C55CAF000B15B30 /* AlertHelperView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertHelperView.swift; sourceTree = "<group>"; };
+		3C24EC172CFE084500CAC6C8 /* Server.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Server.swift; sourceTree = "<group>"; };
 		3C2C9BB92C582EED00EAD5CA /* MarkerData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkerData.swift; sourceTree = "<group>"; };
 		3C2C9BBB2C58308500EAD5CA /* MarkerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkerStore.swift; sourceTree = "<group>"; };
 		3C326B5E2C58F88700F377A8 /* dataMarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dataMarkView.swift; sourceTree = "<group>"; };
@@ -100,6 +101,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3C24EC132CFE081600CAC6C8 /* KMP */ = {
+			isa = PBXGroup;
+			children = (
+				3C24EC172CFE084500CAC6C8 /* Server.swift */,
+			);
+			path = KMP;
+			sourceTree = "<group>";
+		};
 		3C2C9BB82C582ED300EAD5CA /* auxiliary */ = {
 			isa = PBXGroup;
 			children = (
@@ -151,6 +160,7 @@
 		3C896A2C2C52878700C15A28 /* MeetMap_ios */ = {
 			isa = PBXGroup;
 			children = (
+				3C24EC132CFE081600CAC6C8 /* KMP */,
 				3C896A7A2C52CA2800C15A28 /* Map */,
 				3C896A3B2C52882E00C15A28 /* GoogleService-Info.plist */,
 				3C896A4B2C52902800C15A28 /* Googlesingin */,
@@ -314,7 +324,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3C6E10E12CF76C8D008DD02D /* MeetMap-ios-Info.plist in Resources */,
 				3C896A352C52878700C15A28 /* Preview Assets.xcassets in Resources */,
 				3C896A322C52878700C15A28 /* Assets.xcassets in Resources */,
 				3C896A512C52906F00C15A28 /* Helper in Resources */,
@@ -339,6 +348,7 @@
 				3C9962022C73FDE9002F87CC /* ShakeAlertView.swift in Sources */,
 				3C896A732C529EE700C15A28 /* MeetMap_iosApp.swift in Sources */,
 				3C896A6B2C5299C400C15A28 /* Home.swift in Sources */,
+				3C24EC182CFE084C00CAC6C8 /* Server.swift in Sources */,
 				3C21839C2C55C71800B15B30 /* CustomMapView.swift in Sources */,
 				3C896A5F2C52950A00C15A28 /* GoogleSiginBtn.swift in Sources */,
 				3C896A772C52C6E000C15A28 /* CustomButton.swift in Sources */,
