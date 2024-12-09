@@ -153,7 +153,13 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
             implementation (libs.androidx.core.splashscreen)
             implementation ("com.google.firebase:firebase-auth-ktx:23.1.0") // Проверьте актуальную версию
-
+            implementation("io.ktor:ktor-client-core:3.0.2") // Основной модуль клиента
+            implementation("io.ktor:ktor-client-okhttp:3.0.1") // Движок OkHttp для Android
+            implementation("io.ktor:ktor-client-logging:3.0.1") // Для логирования
+            implementation("io.ktor:ktor-client-content-negotiation:3.0.2") // Для сериализации
+            implementation("io.ktor:ktor-client-json:2.3.4") // Работа с JSON (при необходимости)
+            implementation("io.ktor:ktor-client-serialization:2.3.4") // Сериализация (если нужно)
+            implementation("io.ktor:ktor-client-plugins:2.3.4") // Плагины, включая HttpT
 
         }
         commonMain.dependencies {
@@ -209,6 +215,7 @@ android {
 
 dependencies {
     implementation(libs.firebase.auth)
+    implementation(libs.firebase.storage)
     debugImplementation(compose.uiTooling)
 }
 

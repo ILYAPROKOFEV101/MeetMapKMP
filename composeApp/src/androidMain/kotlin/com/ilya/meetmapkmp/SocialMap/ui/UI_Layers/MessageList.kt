@@ -92,6 +92,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.storage.FirebaseStorage
 
 import com.ilya.meetmapkmp.R
+import com.ilya.meetmapkmp.SocialMap.DATAServices.Storeg.uploadFileToSupabase
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
@@ -258,16 +259,21 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
 fun Material_text_filed(chatViewModel: ChatViewModel) {
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
-
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-        onResult = { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val uri = result.data?.data
-                uri?.let {
-                    uploadToFirebase(it, context)
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            uri?.let {
+                // Запуск корутины для загрузки файла
+                CoroutineScope(Dispatchers.IO).launch {
+                    uploadFileToSupabase(
+                        context = context,
+                        uri = it,
+            bucketName = "my-bucket", // Замените на ваш bucket
+            supabaseUrl = "https://imlhstamcqwacpgldxsf.supabase.co",
+            supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltbGhzdGFtY3F3YWNwZ2xkeHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzIyMjA3ODAsImV4cCI6MjA0Nzc5Njc4MH0.C7HB2Q0B4WATBmilHG3oU4ZTd4TcgoYIlMfiLa4Nd6I"
+                    )
                 }
-            }
+            } ?: Log.e("MaterialTextFiled", "No image selected")
         }
     )
 
@@ -282,10 +288,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .align(Alignment.CenterVertically),
             onClick = {
                 // Запуск галереи
-                val intent = Intent(Intent.ACTION_PICK).apply {
-                    type = "image/*"
-                }
-                launcher.launch(intent)
+                launcher.launch("image/*")
             }
         ) {
             Icon(
@@ -333,32 +336,6 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     }
 }
 
-fun uploadToFirebase(uri: Uri, context: Context) {
-    val storageRef = FirebaseStorage.getInstance().reference
-    val fileName = uri.lastPathSegment ?: "file_${System.currentTimeMillis()}"
-    val fileRef = storageRef.child("uploads/$fileName")
-
-    // Добавление логов
-    Log.d("Upload", "Начало загрузки файла: $fileName")
-
-    fileRef.putFile(uri)
-        .addOnSuccessListener { taskSnapshot ->
-            Log.d("Upload", "Файл успешно загружен: ${taskSnapshot.metadata?.path}")
-            fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                Log.d("Upload", "Ссылка на файл: $downloadUri")
-                Toast.makeText(context, "Фото загружено!", Toast.LENGTH_SHORT).show()
-            }
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Upload", "Ошибка загрузки файла: ${exception.message}")
-            Toast.makeText(context, "Ошибка загрузки: ${exception.message}", Toast.LENGTH_SHORT).show()
-        }
-        .addOnProgressListener { taskSnapshot ->
-            val progress =
-                (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-            Log.d("Upload", "Прогресс загрузки: $progress%")
-        }
-}
 
 // Функция для проверки, является ли файл видео
 private fun isVideoFile(context: Context, uri: Uri): Boolean {
