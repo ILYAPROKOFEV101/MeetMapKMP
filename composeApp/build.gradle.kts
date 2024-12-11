@@ -161,6 +161,10 @@ kotlin {
             implementation("io.ktor:ktor-client-serialization:2.3.4") // Сериализация (если нужно)
             implementation("io.ktor:ktor-client-plugins:2.3.4") // Плагины, включая HttpT
 
+            implementation(platform("io.github.jan-tennert.supabase:bom:3.0.2"))
+
+            implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
+
         }
         commonMain.dependencies {
             implementation("io.ktor:ktor-client-core:3.0.1")
@@ -215,7 +219,6 @@ android {
 
 dependencies {
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.storage)
     debugImplementation(compose.uiTooling)
 }
 

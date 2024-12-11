@@ -92,10 +92,12 @@ import coil.compose.rememberAsyncImagePainter
 import com.google.firebase.storage.FirebaseStorage
 
 import com.ilya.meetmapkmp.R
-import com.ilya.meetmapkmp.SocialMap.DATAServices.Storeg.uploadFileToSupabase
+import com.ilya.meetmapkmp.SocialMap.DATAServices.Storeg.createBucketAndUploadPhoto
+
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
+import createTempFileFromUri
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -259,21 +261,39 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
 fun Material_text_filed(chatViewModel: ChatViewModel) {
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Лаунчер для выбора изображения
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
-        onResult = { uri: Uri? ->
+        onResult = { uri ->
             uri?.let {
-                // Запуск корутины для загрузки файла
-                CoroutineScope(Dispatchers.IO).launch {
-                    uploadFileToSupabase(
-                        context = context,
-                        uri = it,
-            bucketName = "my-bucket", // Замените на ваш bucket
-            supabaseUrl = "https://imlhstamcqwacpgldxsf.supabase.co",
-            supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImltbGhzdGFtY3F3YWNwZ2xkeHNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzIyMjA3ODAsImV4cCI6MjA0Nzc5Njc4MH0.C7HB2Q0B4WATBmilHG3oU4ZTd4TcgoYIlMfiLa4Nd6I"
-                    )
+                Log.d("MaterialTextFiled", "Изображение выбрано, URI: $uri")
+
+                // Обработка файла и отправка
+                val file = createTempFileFromUri(context, it)
+                if (file != null) {
+                    Log.d("MaterialTextFiled", "Временный файл создан: ${file.name}")
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Log.d("MaterialTextFiled", "Начинаем загрузку файла на сервер...")
+                        val success = createBucketAndUploadPhoto(
+                            bucketName = "avatars",
+                            fileName = "uploaded_image.png",
+                            file = file
+                        )
+                        if (success) {
+                            Log.d("MaterialTextFiled", "Загрузка успешна")
+                            // Добавить уведомление о успехе
+                        } else {
+                            Log.e("MaterialTextFiled", "Ошибка при загрузке файла")
+                            // Обработать ошибку
+                        }
+                    }
+                } else {
+                    Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
-            } ?: Log.e("MaterialTextFiled", "No image selected")
+            } ?: Log.e("MaterialTextFiled", "URI изображения не получен")
         }
     )
 
@@ -287,8 +307,8 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .weight(0.1f)
                 .align(Alignment.CenterVertically),
             onClick = {
-                // Запуск галереи
-                launcher.launch("image/*")
+                Log.d("MaterialTextFiled", "Открываем галерею для выбора изображения")
+                launcher.launch("image/*") // Открываем галерею для выбора изображения
             }
         ) {
             Icon(
