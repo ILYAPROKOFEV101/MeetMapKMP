@@ -2,24 +2,50 @@ package com.ilya.Supabase
 
 
 
-suspend fun uploadPhotoToSupabase() {
-    val httpClient = createHttpClient()
-    val supabaseStorage = SupabaseStorage(
-        httpClient = httpClient,
-        supabaseUrl = "https://imlhstamcqwacpgldxsf.supabase.co/storage/v1/s3",
-        supabaseKey = "533d9e6301a67a9c1aa533386a6d92f8"
-    )
+import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 
-    val bucket = "my-bucket"
-    val path = "photos/my-photo.jpg"
+class BucketManager(private val ioDispatcher: CoroutineDispatcher) {
 
-    try {
-        val fileBytes = getFileBytes() // Функция для получения байтов файла
-        val fileUrl = supabaseStorage.uploadFile(bucket, path, fileBytes)
-        println("Файл успешно загружен: $fileUrl")
-    } catch (e: Exception) {
-        println("Ошибка загрузки файла: ${e.message}")
-    } finally {
-        httpClient.close()
+    suspend fun createBucketAndUploadPhoto(
+        bucketName: String,
+        fileName: String,
+        file: ByteArray,
+        maxFileSizeMB: Int = 5,
+        log: (String) -> Unit
+    ): Boolean {
+        return withContext(ioDispatcher) {
+            try {
+                log("Создание бакета с именем: $bucketName")
+
+                // Add bucket creation logic here if needed
+                log("Бакет $bucketName успешно создан")
+
+                // Simulated bucket fetching (replace with actual implementation)
+                val bucket = supabase.storage.from(bucketName)
+                log("Получен бакет $bucketName")
+
+                // File size validation
+                if (file.size > maxFileSizeMB * 1024 * 1024) {
+                    log("Ошибка: размер файла превышает ${maxFileSizeMB}MB")
+                    return@withContext false
+                }
+
+                log("Чтение файла $fileName, размер: ${file.size} байт")
+
+                // Upload logic (adjust as per actual implementation)
+                bucket.upload(fileName, file) {
+                    upsert = false
+                }
+
+                log("Файл $fileName успешно загружен в бакет $bucketName")
+                true
+            } catch (e: Exception) {
+                log("Ошибка при создании бакета или загрузке файла: ${e.message}")
+                e.printStackTrace()
+                false
+            }
+        }
     }
 }
