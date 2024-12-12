@@ -1,22 +1,16 @@
 package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
-import android.app.Activity
 import android.content.ContentResolver
 import android.content.Context
-import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -26,14 +20,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.unit.dp
 
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,7 +35,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -51,23 +42,18 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.UploadFile
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ComposeCompilerApi
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,10 +61,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -87,14 +71,16 @@ import androidx.compose.ui.text.style.TextOverflow
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import coil.compose.rememberAsyncImagePainter
-import com.google.firebase.storage.FirebaseStorage
 
 import com.ilya.meetmapkmp.R
+import com.ilya.Supabase.androidLog
+import com.ilya.Supabase.bucketManager
+
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
+import createTempFileFromUri
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,8 +88,8 @@ import kotlinx.coroutines.withContext
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import java.util.UUID
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -258,16 +244,40 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
 fun Material_text_filed(chatViewModel: ChatViewModel) {
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
 
+    // Лаунчер для выбора изображения
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-        onResult = { result ->
-            if (result.resultCode == Activity.RESULT_OK) {
-                val uri = result.data?.data
-                uri?.let {
-                    uploadToFirebase(it, context)
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri ->
+            uri?.let {
+                Log.d("MaterialTextFiled", "Изображение выбрано, URI: $uri")
+
+                // Обработка файла и отправка
+                val file = createTempFileFromUri(context, it)
+                if (file != null) {
+                    Log.d("MaterialTextFiled", "Временный файл создан: ${file.name}")
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        Log.d("MaterialTextFiled", "Начинаем загрузку файла на сервер...")
+                        val success = bucketManager.createBucketAndUploadPhoto(
+                            bucketName = "avatars",
+                            fileName = "${UUID.randomUUID()}.png",
+                            file = file.readBytes(),
+                            log = androidLog("BucketManager") // Логирование
+                        )
+                        if (success) {
+                            Log.d("MaterialTextFiled", "Загрузка успешна")
+                            // Добавить уведомление о успехе
+                        } else {
+                            Log.e("MaterialTextFiled", "Ошибка при загрузке файла")
+                            // Обработать ошибку
+                        }
+                    }
+                } else {
+                    Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
-            }
+            } ?: Log.e("MaterialTextFiled", "URI изображения не получен")
         }
     )
 
@@ -281,11 +291,8 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .weight(0.1f)
                 .align(Alignment.CenterVertically),
             onClick = {
-                // Запуск галереи
-                val intent = Intent(Intent.ACTION_PICK).apply {
-                    type = "image/*"
-                }
-                launcher.launch(intent)
+                Log.d("MaterialTextFiled", "Открываем галерею для выбора изображения")
+                launcher.launch("image/*") // Открываем галерею для выбора изображения
             }
         ) {
             Icon(
@@ -333,32 +340,6 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     }
 }
 
-fun uploadToFirebase(uri: Uri, context: Context) {
-    val storageRef = FirebaseStorage.getInstance().reference
-    val fileName = uri.lastPathSegment ?: "file_${System.currentTimeMillis()}"
-    val fileRef = storageRef.child("uploads/$fileName")
-
-    // Добавление логов
-    Log.d("Upload", "Начало загрузки файла: $fileName")
-
-    fileRef.putFile(uri)
-        .addOnSuccessListener { taskSnapshot ->
-            Log.d("Upload", "Файл успешно загружен: ${taskSnapshot.metadata?.path}")
-            fileRef.downloadUrl.addOnSuccessListener { downloadUri ->
-                Log.d("Upload", "Ссылка на файл: $downloadUri")
-                Toast.makeText(context, "Фото загружено!", Toast.LENGTH_SHORT).show()
-            }
-        }
-        .addOnFailureListener { exception ->
-            Log.e("Upload", "Ошибка загрузки файла: ${exception.message}")
-            Toast.makeText(context, "Ошибка загрузки: ${exception.message}", Toast.LENGTH_SHORT).show()
-        }
-        .addOnProgressListener { taskSnapshot ->
-            val progress =
-                (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount).toInt()
-            Log.d("Upload", "Прогресс загрузки: $progress%")
-        }
-}
 
 // Функция для проверки, является ли файл видео
 private fun isVideoFile(context: Context, uri: Uri): Boolean {
