@@ -54,6 +54,7 @@ import androidx.compose.runtime.Composable
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +72,7 @@ import androidx.compose.ui.text.style.TextOverflow
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 
 import com.ilya.meetmapkmp.R
@@ -80,11 +82,13 @@ import com.ilya.Supabase.bucketManager
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FileViewModel
 import createTempFileFromUri
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -245,6 +249,9 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val fileViewModel: FileViewModel = viewModel()
+    val fileNameList = remember { mutableStateListOf<String>() } // Хранилище для названий файлов
+    var filename = "${UUID.randomUUID()}"
 
     // Лаунчер для выбора изображения
     val launcher = rememberLauncherForActivityResult(
@@ -253,33 +260,23 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
             uri?.let {
                 Log.d("MaterialTextFiled", "Изображение выбрано, URI: $uri")
 
-                // Обработка файла и отправка
+                // Создание временного файла из URI
                 val file = createTempFileFromUri(context, it)
+
                 if (file != null) {
                     Log.d("MaterialTextFiled", "Временный файл создан: ${file.name}")
+                    // Сохраняем файл в ViewModel
+                    fileViewModel.setGlobalFile(file)
 
-                    CoroutineScope(Dispatchers.IO).launch {
-                        Log.d("MaterialTextFiled", "Начинаем загрузку файла на сервер...")
-                        val success = bucketManager.createBucketAndUploadPhoto(
-                            bucketName = "avatars",
-                            fileName = "${UUID.randomUUID()}.png",
-                            file = file.readBytes(),
-                            log = androidLog("BucketManager") // Логирование
-                        )
-                        if (success) {
-                            Log.d("MaterialTextFiled", "Загрузка успешна")
-                            // Добавить уведомление о успехе
-                        } else {
-                            Log.e("MaterialTextFiled", "Ошибка при загрузке файла")
-                            // Обработать ошибку
-                        }
-                    }
+                    val filename = "${UUID.randomUUID()}.png" // Генерация уникального имени
+                    fileNameList.add(filename) // Добавляем имя в список
                 } else {
                     Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
             } ?: Log.e("MaterialTextFiled", "URI изображения не получен")
         }
     )
+
 
     Row(
         Modifier
@@ -322,14 +319,54 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .weight(0.1f)
                 .align(Alignment.CenterVertically),
             onClick = {
-                chatViewModel.sendMessage(
-                    text.toString(),
-                    gifUrls = emptyList(),
-                    imageUrls = emptyList(),
-                    videoUrls = emptyList(),
-                    fileUrls = emptyList()
-                )
-                text = ""
+                // Код для отправки файла на сервер
+                CoroutineScope(Dispatchers.IO).launch {
+                    val file = fileViewModel._globalFile.value // Получаем файл из ViewModel
+                    if (file != null) {
+                        try {
+                            Log.d("MaterialTextFiled", "Начинаем загрузку файла на сервер...")
+
+                            // Загружаем файл в бакет на сервер
+                            val success = bucketManager.createBucketAndUploadPhoto(
+                                bucketName = "avatars",
+                                fileName = filename,
+                                file = file.readBytes(), // Чтение байтов из файла
+                                log = androidLog("BucketManager") // Логирование
+                            )
+
+                            // Обрабатываем результат загрузки
+                            if (success) {
+                                Log.d("MaterialTextFiled", "Загрузка успешна")
+                                // Добавить уведомление о успехе (например, Toast или Snackbar)
+                            } else {
+                                Log.e("MaterialTextFiled", "Ошибка при загрузке файла")
+                                // Обработать ошибку
+                            }
+
+                            // Отправляем сообщение с ссылкой на загруженное изображение
+                            chatViewModel.sendMessage(
+                                content = text.toString(),
+                                imageUrls = fileNameList.toList(), // Передаем копию списка имен файлов
+                                videoUrls = emptyList(),
+                                gifUrls = emptyList(),
+                                fileUrls = emptyList()
+                            )
+
+                        } catch (e: Exception) {
+                            Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
+                            // Обработать ошибку
+                        }
+
+                        // Очистка текста после отправки
+                        text = ""
+                    } else {
+                        Log.e("MaterialTextFiled", "Файл не найден")
+                        // Обработать ошибку, если файл не найден
+                    }
+                }
+
+
+
             }
         ) {
             Icon(
