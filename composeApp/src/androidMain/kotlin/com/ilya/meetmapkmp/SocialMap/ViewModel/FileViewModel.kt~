@@ -16,10 +16,4 @@ class FileViewModel : ViewModel() {
     fun setUploadingState(isUploading: Boolean) {
         _isUploading.postValue(isUploading) // Используем postValue для фоновых потоков
     }
-
-    internal val _globalFile = MutableLiveData<File?>()
-
-    fun setGlobalFile(file: File?) {
-        _globalFile.postValue(file) // Используем postValue
-    }
 }

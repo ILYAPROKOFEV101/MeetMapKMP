@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -62,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.Font
@@ -162,19 +164,20 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
     val font = FontFamily(
         Font(R.font.open_sans_semi_condensed_regular, FontWeight.Normal),
     )
-
+    Column(modifier = Modifier)
+    {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start
     ) {
-        val imageModifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(40.dp))
 
+            val imageModifier = Modifier
+                .size(40.dp)
+                .clip(RoundedCornerShape(40.dp))
 
-        if (!(isMyMessage)) {
+            if (!(isMyMessage)) {
                 Image(
                     painter = painter,
                     contentDescription = null,
@@ -182,7 +185,7 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
                 )
                 Spacer(modifier = Modifier.width(2.dp))
 
-        }
+            }
 
             Card(
                 modifier = Modifier
@@ -193,7 +196,11 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
                         start = if (isMyMessage) screenWidth * 0.2f else 0.dp,
                         bottom = 2.dp
                     ),
-                colors = CardDefaults.cardColors(containerColor = if (isMyMessage) Color(0xFF315FF3) else Color(0xFFFFFFFF)),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isMyMessage) Color(0xFF315FF3) else Color(
+                        0xFFFFFFFF
+                    )
+                ),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(
@@ -224,11 +231,13 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
                         val timestamp = message.messageTime ?: 1730975442465L // UTC время
                         val userZoneId = ZoneId.systemDefault() // Часовая зона пользователя
 
-                            // Преобразуем миллисекунды в Instant, затем в LocalDateTime
-                        val localDateTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), userZoneId)
-                        val formattedTime = localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+                        // Преобразуем миллисекунды в Instant, затем в LocalDateTime
+                        val localDateTime =
+                            LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), userZoneId)
+                        val formattedTime =
+                            localDateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
 
-                            // Отображаем отформатированное время в Text
+                        // Отображаем отформатированное время в Text
                         Text(
                             text = formattedTime,
                             fontSize = 12.sp,
@@ -239,7 +248,37 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
                     }
                 }
             }
+
         }
+        if (message.imageUrls.isNotEmpty()) {
+            Spacer(Modifier.height(5.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start
+            ) {
+                LazyRow {
+                    items(message.imageUrls) { imageUrl ->
+                        Box(
+                            modifier = Modifier
+                                .width(200.dp)
+                                .height(200.dp)
+                                .padding(8.dp)
+                        ) {
+                            Image(
+                                painter = rememberAsyncImagePainter("https://imlhstamcqwacpgldxsf.supabase.co/storage/v1/object/public/avatars/$imageUrl"),
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(10.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+    }
     }
 
 
@@ -251,7 +290,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val fileViewModel: FileViewModel = viewModel()
     val fileNameList = remember { mutableStateListOf<String>() } // Хранилище для названий файлов
-    var filename = "${UUID.randomUUID()}"
+    var filename = "${UUID.randomUUID()}.png"
 
     // Лаунчер для выбора изображения
     val launcher = rememberLauncherForActivityResult(
@@ -268,8 +307,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                     // Сохраняем файл в ViewModel
                     fileViewModel.setGlobalFile(file)
 
-                    val filename = "${UUID.randomUUID()}.png" // Генерация уникального имени
-                    fileNameList.add(filename) // Добавляем имя в список
+
                 } else {
                     Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
@@ -319,55 +357,57 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .weight(0.1f)
                 .align(Alignment.CenterVertically),
             onClick = {
-                // Код для отправки файла на сервер
+
+
+                // Отправка сообщения с именем файла
                 CoroutineScope(Dispatchers.IO).launch {
-                    val file = fileViewModel._globalFile.value // Получаем файл из ViewModel
-                    if (file != null) {
-                        try {
-                            Log.d("MaterialTextFiled", "Начинаем загрузку файла на сервер...")
-
-                            // Загружаем файл в бакет на сервер
-                            val success = bucketManager.createBucketAndUploadPhoto(
-                                bucketName = "avatars",
-                                fileName = filename,
-                                file = file.readBytes(), // Чтение байтов из файла
-                                log = androidLog("BucketManager") // Логирование
-                            )
-
-                            // Обрабатываем результат загрузки
-                            if (success) {
-                                Log.d("MaterialTextFiled", "Загрузка успешна")
-                                // Добавить уведомление о успехе (например, Toast или Snackbar)
-                            } else {
-                                Log.e("MaterialTextFiled", "Ошибка при загрузке файла")
-                                // Обработать ошибку
-                            }
-
-                            // Отправляем сообщение с ссылкой на загруженное изображение
-                            chatViewModel.sendMessage(
-                                content = text.toString(),
-                                imageUrls = fileNameList.toList(), // Передаем копию списка имен файлов
-                                videoUrls = emptyList(),
-                                gifUrls = emptyList(),
-                                fileUrls = emptyList()
-                            )
-
-                        } catch (e: Exception) {
-                            Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
-                            // Обработать ошибку
-                        }
-
-                        // Очистка текста после отправки
+                    try {
+                        chatViewModel.sendMessage(
+                            content = text.toString(),
+                            imageUrls = listOf(filename), // Отправляем имя файла
+                            videoUrls = emptyList(),
+                            gifUrls = emptyList(),
+                            fileUrls = emptyList()
+                        )
                         text = ""
-                    } else {
-                        Log.e("MaterialTextFiled", "Файл не найден")
-                        // Обработать ошибку, если файл не найден
+                        fileNameList.clear()
+                        Log.d("MaterialTextFiled", "Сообщение отправлено с именем файла: $filename")
+                    } catch (e: Exception) {
+                        Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
                     }
                 }
 
+                // Загрузка файла на сервер
+                CoroutineScope(Dispatchers.IO).launch {
+                    val file = fileViewModel._globalFile.value // Получаем файл из ViewModel
+                    if (file != null) {
+                        fileViewModel.setUploadingState(true) // Устанавливаем состояние загрузки
+                        try {
+                            Log.d("MaterialTextFiled", "Начинаем загрузку файла на сервер...")
 
-
+                            // Загружаем файл на сервер
+                            val success = bucketManager.createBucketAndUploadPhoto(
+                                bucketName = "avatars",
+                                fileName = filename,
+                                file = file.readBytes(),
+                                log = androidLog("BucketManager")
+                            )
+                            if (success) {
+                                Log.d("MaterialTextFiled", "Загрузка файла успешна: $filename")
+                            } else {
+                                Log.e("MaterialTextFiled", "Ошибка при загрузке файла: $filename")
+                            }
+                        } catch (e: Exception) {
+                            Log.e("MaterialTextFiled", "Ошибка при загрузке файла: ${e.message}")
+                        } finally {
+                            fileViewModel.setUploadingState(false) // Снимаем состояние загрузки
+                        }
+                    } else {
+                        Log.e("MaterialTextFiled", "Файл не найден для загрузки")
+                    }
+                }
             }
+
         ) {
             Icon(
                 imageVector = Icons.Default.Send,
