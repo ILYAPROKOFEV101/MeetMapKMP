@@ -502,6 +502,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
 
                         lifecycleScope.launch {
+                            while (true) {
                                 try {
                                     val markers = getPublicMarker(uid_main, LatLng(it.latitude, it.longitude))
                                     markers.forEach { mapMarker ->
@@ -514,6 +515,8 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                                 } catch (e: Exception) {
                                     Log.e("MarkerData", "Error fetching markers", e)
                                 }
+                                delay(10000) // Задержка в 10 секунд
+                            }
                         }
 
                         shakeDetector = ShakeDetector(this, object : ShakeDetector.OnShakeListener {

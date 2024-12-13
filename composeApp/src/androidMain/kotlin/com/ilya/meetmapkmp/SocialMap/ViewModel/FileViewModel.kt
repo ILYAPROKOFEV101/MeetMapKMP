@@ -22,4 +22,7 @@ class FileViewModel : ViewModel() {
     fun setGlobalFile(file: File?) {
         _globalFile.postValue(file) // Используем postValue
     }
+    fun clereGlobalFile() {
+        _globalFile.postValue(null) // Используем postValue
+    }
 }

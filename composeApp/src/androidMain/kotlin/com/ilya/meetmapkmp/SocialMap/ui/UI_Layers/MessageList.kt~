@@ -364,7 +364,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                     try {
                         chatViewModel.sendMessage(
                             content = text.toString(),
-                            imageUrls = if(fileViewModel._globalFile.value != null) listOf(filename) else emptyList(), // Отправляем имя файла
+                            imageUrls = listOf(filename), // Отправляем имя файла
                             videoUrls = emptyList(),
                             gifUrls = emptyList(),
                             fileUrls = emptyList()
