@@ -7,6 +7,7 @@ import MarkerAdapter
 import MarkerData
 import SpaceItemDecoration
 import WebSocketManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -14,6 +15,7 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.location.Geocoder
 import android.location.Location
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
@@ -24,9 +26,14 @@ import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
+import android.widget.SeekBar
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
@@ -35,7 +42,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import bitmapDescriptorFromVector
@@ -58,6 +67,10 @@ import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.gms.maps.model.RoundCap
 import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.datepicker.MaterialDatePicker
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
+import com.google.gson.Gson
 import com.ilya.MeetingMap.Map.Server_API.GET.getPublicMarker
 import com.ilya.MeetingMap.Map.ViewModel.show_friends.show_friends_one
 import com.ilya.meetmapkmp.Map.DataModel.Friends_type
@@ -75,10 +88,14 @@ import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.profile.IMG
 import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
+import com.ilya.meetmapkmp.Map.Server_API.GET.getAddressFromCoordinates
+import com.ilya.meetmapkmp.Map.Server_API.POST.postInvite
+import com.ilya.meetmapkmp.Map.ViewModel.MapViewModel
 import com.ilya.meetmapkmp.R
 import com.ilya.meetmapkmp.SocialMap.SocialMapActivity
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 import decodePoly
+import generateUID
 import getMapRoute
 import getParticipant
 import kotlinx.coroutines.CoroutineScope
@@ -96,12 +113,15 @@ import nl.dionsegijn.konfetti.xml.KonfettiView
 import okhttp3.OkHttpClient
 import post_user_info
 import sendGetRequest
-import showAddMarkerDialog
 import show_friends_fourth
 import show_friends_more
 import show_friends_third
 import show_friends_two
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 
@@ -133,8 +153,8 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         )
     }
     private val client = OkHttpClient()
-    var markers by mutableStateOf(listOf<MarkerData>())
     private lateinit var shakeDetector: ShakeDetector
+    val mapViewModel: MapViewModel  by viewModels()
 
 
     val webSocketManager = WebSocketManager(client, this)
@@ -451,6 +471,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onMapReady(googleMap: GoogleMap) {
         mMap = googleMap
         mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
@@ -502,21 +523,19 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
 
                         lifecycleScope.launch {
-                            while (true) {
                                 try {
-                                    val markers = getPublicMarker(uid_main, LatLng(it.latitude, it.longitude))
-                                    markers.forEach { mapMarker ->
-                                        val markerLatLng = LatLng(mapMarker.lat, mapMarker.lon)
-                                        val marker = addMarker(markerLatLng, mapMarker.name)
-                                        marker?.let {
-                                            markerDataMap[marker] = mapMarker
+                                    mapViewModel.markers.collect { markers ->
+                                        markers.forEach { mapMarker ->
+                                            val markerLatLng = LatLng(mapMarker.lat, mapMarker.lon)
+                                            val marker = addMarker(markerLatLng, mapMarker.name)
+                                            marker?.let {
+                                                markerDataMap[marker] = mapMarker
+                                            }
                                         }
                                     }
                                 } catch (e: Exception) {
                                     Log.e("MarkerData", "Error fetching markers", e)
                                 }
-                                delay(10000) // Задержка в 10 секунд
-                            }
                         }
 
                         shakeDetector = ShakeDetector(this, object : ShakeDetector.OnShakeListener {
@@ -575,8 +594,6 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
             }, 200) // Задержка в 0.2 секунду перед выполнением кода
         }
     }
-
-
 
 
     private val markerList = mutableListOf<Marker>()  // Список для сохранения маркеров
@@ -693,6 +710,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         dialog.show()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onMapClick(latLng: LatLng) {
         showAddMarkerDialog(latLng, this, uid_main, this)
     }
@@ -825,7 +843,175 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         webSocketClient.start()
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun showAddMarkerDialog(
+        latLng: LatLng,
+        context: Context,
+        uid_main: String,
+        activity: FragmentActivity // добавлен параметр
+    ) {
 
+        // val addmarker = Map_Activity()
+
+        // Раздуйте макет диалога
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_marker, null)
+        var access = false // Переменная для хранения состояния Switch
+        // Найдите элементы внутри макета диалога
+        val selectDateButton_start = dialogView.findViewById<Button>(R.id.selectDateButtonstart)
+        val selectDateButton_end = dialogView.findViewById<Button>(R.id.selectDateButtonend)
+        val selectTimeButtonstart = dialogView.findViewById<Button>(R.id.selectTimeButton_start)
+        val selectTimeButtonend = dialogView.findViewById<Button>(R.id.selectTimeButton_end)
+        val editName = dialogView.findViewById<EditText>(R.id.editname)
+        val editobout = dialogView.findViewById<EditText>(R.id.editobout)
+        val seekBar = dialogView.findViewById<SeekBar>(R.id.seekBar)
+        val textView = dialogView.findViewById<TextView>(R.id.textView)
+        val publicSwitch = dialogView.findViewById<Switch>(R.id.switch2) // Найдите ваш Switch
+        var selectedDate_start: String? = null
+        var selectedDate_end: String? = null
+        var selectedTime: Pair<Int, Int>? = null
+        var startTime: String? = null
+        var endTime: String? = null
+        publicSwitch.text = if (!access) "Публичная метка" else "Приватная метка"
+        publicSwitch.setOnCheckedChangeListener { _, isChecked ->
+            access = isChecked
+            publicSwitch.text = if (!access) "Публичная метка" else "Приватная метка"
+        }
+
+        selectDateButton_start.setOnClickListener {
+            val datePicker = MaterialDatePicker.Builder.datePicker()
+                .build()
+
+            datePicker.show(activity.supportFragmentManager, "DATE_PICKER")
+
+            datePicker.addOnPositiveButtonClickListener {
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                selectedDate_start = dateFormat.format(Date(it))
+                selectDateButton_start.text = selectedDate_start
+            }
+        }
+
+        selectDateButton_end.setOnClickListener {
+            val datePicker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText("Выберите дату")
+                .build()
+
+            datePicker.show(activity.supportFragmentManager, "DATE_PICKER")
+
+            datePicker.addOnPositiveButtonClickListener {
+                val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                selectedDate_end = dateFormat.format(Date(it))
+                selectDateButton_end.text = selectedDate_end
+            }
+        }
+
+        selectTimeButtonstart.setOnClickListener {
+            val is24HourFormat = true
+            val timeFormat = if (is24HourFormat) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H
+
+            val timePicker = MaterialTimePicker.Builder()
+                .setTimeFormat(timeFormat)
+                .setTitleText("Выберите время")
+                .build()
+
+            timePicker.show(activity.supportFragmentManager, "TIME_PICKER")
+
+            timePicker.addOnPositiveButtonClickListener {
+                val hour = timePicker.hour
+                val minute = timePicker.minute
+                val formattedTime = String.format("%02d:%02d", hour, minute)
+                selectedTime = Pair(hour, minute)
+                selectTimeButtonstart.text = formattedTime
+                startTime = formattedTime // Сохраняем выбранное время в переменной
+            }
+        }
+
+        selectTimeButtonend.setOnClickListener {
+            val is24HourFormat = true
+            val timeFormat = if (is24HourFormat) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H
+
+            val timePicker = MaterialTimePicker.Builder()
+                .setTimeFormat(timeFormat)
+                .setTitleText("Выберите время")
+                .build()
+
+            timePicker.show(activity.supportFragmentManager, "TIME_PICKER")
+
+            timePicker.addOnPositiveButtonClickListener {
+                val hour = timePicker.hour
+                val minute = timePicker.minute
+                val formattedTime = String.format("%02d:%02d", hour, minute)
+                selectedTime = Pair(hour, minute)
+                selectTimeButtonend.text = formattedTime
+                endTime = formattedTime // Сохраняем выбранное время в переменной
+            }
+        }
+
+        // Создаем диалоговое окно с инфлейтированным макетом
+        val builder = AlertDialog.Builder(context)
+        builder.setView(dialogView)
+            .setPositiveButton("Да") { dialog, _ ->
+                // Получаем текст из EditText
+                val editText = dialogView.findViewById<EditText>(R.id.editname)
+                val markerDescription = editobout.text.toString() // Получаем текст из поля editAbout
+                val markerTitle = editText.text.toString()
+
+                if (markerTitle.isNotEmpty()) {
+                    val participants = seekBar.progress + 1
+
+                    // Запуск корутины для получения улицы
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val street = getAddressFromCoordinates(latLng.latitude, latLng.longitude) ?: "Unknown Street"
+
+                        // Теперь создаем MarkerData после получения улицы
+                        val markerData = MarkerData(
+                            key = getUserKey(context).toString(),
+                            username = "Ilya",
+                            imguser = "Photo",
+                            photomark = "photo",
+                            street = street,
+                            id = generateUID(),
+                            lat = latLng.latitude,
+                            lon = latLng.longitude,
+                            name = markerTitle,
+                            whatHappens = markerDescription,
+                            startDate = selectedDate_start?.let { LocalDate.parse(it) }.toString(),
+                            endDate = selectedDate_end?.let { LocalDate.parse(it) }.toString(),
+                            startTime = startTime.toString(),
+                            endTime = endTime.toString(),
+                            participants = participants,
+                            access = access
+                        )
+
+                        // Запуск на главном потоке для обновления UI
+                        withContext(Dispatchers.Main) {
+
+                            set_addMarker(latLng, markerTitle)
+
+                            val gson = Gson()
+                            val markerDataJson = gson.toJson(markerData)
+                            Log.d("PushDataJoin", "MarkerData JSON: $markerDataJson")
+
+                            // Запуск корутины для отправки данных на сервер
+                            CoroutineScope(Dispatchers.IO).launch {
+                                postInvite(getUserKey(context).toString(), uid_main, markerData)
+                            }
+
+
+                        }
+                    }
+                } else {
+                    Toast.makeText(context, "Название метки не может быть пустым", Toast.LENGTH_SHORT).show()
+                }
+                dialog.dismiss()
+            }
+            .setNegativeButton("Отмена") { dialog, _ ->
+                dialog.dismiss()
+            }
+
+        val dialog = builder.create()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.rounded_background)
+        dialog.show()
+    }
 
 
 
