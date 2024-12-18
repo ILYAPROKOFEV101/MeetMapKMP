@@ -290,22 +290,25 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val fileViewModel: FileViewModel = viewModel()
     val fileNameList = remember { mutableStateListOf<String>() } // Хранилище для названий файлов
-    var filenameone = "${UUID.randomUUID()}.png"
 
+
+    // Лаунчер для выбора нескольких файлов из галереи
     val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(), // Для выбора нескольких файлов
-        onResult = { uris -> // Получаем список URI выбранных файлов
+        contract = ActivityResultContracts.OpenMultipleDocuments(),
+        onResult = { uris ->
             uris?.let {
-                Log.d("MaterialTextFiled", "Файлы выбраны, URI: $uris")
+                Log.d("MaterialTextFiled", "Файлы выбраны: $uris")
 
-                // Преобразуем URI в файлы и добавляем их в список
                 it.forEach { uri ->
-                    val file = createTempFileFromUri(context, uri) // Преобразуем URI в файл
+                    val file = createTempFileFromUri(context, uri)
                     file?.let { tempFile ->
-                        Log.d("MaterialTextFiled", "Временный файл создан: ${filenameone}")
-                        // Добавляем файл в ViewModel
-                        fileViewModel.addFile(tempFile) // Добавляем файл в список в ViewModel
-                        fileNameList.add(filenameone) // Добавляем имя файла в список
+                        // Генерируем уникальное имя для файла
+                        val uniqueFileName = "${UUID.randomUUID()}.png"
+
+                        // Добавляем файл и имя в соответствующие списки
+                        fileViewModel.addFile(tempFile) // Файл во ViewModel
+                        fileNameList.add(uniqueFileName) // Уникальное имя в список
+                        Log.d("MaterialTextFiled", "Файл добавлен: $uniqueFileName")
                     } ?: Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
             } ?: Log.e("MaterialTextFiled", "URI файлов не получены")
@@ -362,56 +365,64 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 // Отправка сообщения с несколькими файлами
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-
+                        // Отправляем сообщение с именами файлов
                         chatViewModel.sendMessage(
                             content = text.toString(),
-                            imageUrls = fileNameList, // Отправляем список имен файлов
+                            imageUrls = fileNameList, // Список уникальных имен файлов
                             videoUrls = emptyList(),
                             gifUrls = emptyList(),
                             fileUrls = emptyList()
                         )
                         text = ""
-                        fileNameList.clear() // Очистка списка после отправки сообщения
-                        Log.d("MaterialTextFiled", "Сообщение отправлено с именами файлов: $fileNameList")
+                        fileNameList.clear() // Очищаем список имен файлов
+                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: $fileNameList")
                     } catch (e: Exception) {
                         Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
                     }
                 }
 
-                // Загрузка файлов на сервер
                 CoroutineScope(Dispatchers.IO).launch {
-                    val files = fileViewModel.globalFiles.value // Получаем список файлов из ViewModel
+                    val files = fileViewModel.globalFiles.value // Получаем файлы из ViewModel
                     if (files != null && files.isNotEmpty()) {
-                        fileViewModel.setUploadingState(true) // Устанавливаем состояние загрузки
+                        fileViewModel.setUploadingState(true) // Состояние загрузки
                         try {
-                            Log.d("MaterialTextFiled", "Начинаем загрузку файлов на сервер...")
+                            Log.d("MaterialTextFiled", "Начинаем загрузку файлов...")
 
                             files.forEachIndexed { index, file ->
                                 file?.let {
-
-                                    val success = bucketManager.createBucketAndUploadPhoto(
-                                        bucketName = "avatars",
-                                        fileName = fileNameList.toString(),
-                                        file = file.readBytes(),
-                                        log = androidLog("BucketManager")
-                                    )
-                                    if (success) {
-                                        Log.d("MaterialTextFiled", "Загрузка файла успешна: $fileNameList")
+                                    // Получаем имя файла из списка
+                                    val fileName = fileNameList.getOrNull(index)
+                                    if (fileName != null) {
+                                        val success = bucketManager.createBucketAndUploadPhoto(
+                                            bucketName = "avatars",
+                                            fileName = fileName,
+                                            file = file.readBytes(),
+                                            log = androidLog("BucketManager")
+                                        )
+                                        if (success) {
+                                            Log.d("MaterialTextFiled", "Загрузка успешна: $fileName")
+                                        } else {
+                                            Log.e("MaterialTextFiled", "Ошибка при загрузке файла: $fileName")
+                                        }
                                     } else {
-                                        Log.e("MaterialTextFiled", "Ошибка при загрузке файла: $fileNameList")
+                                        Log.e("MaterialTextFiled", "Имя файла не найдено для индекса $index")
                                     }
                                 }
                             }
                         } catch (e: Exception) {
                             Log.e("MaterialTextFiled", "Ошибка при загрузке файлов: ${e.message}")
                         } finally {
-                            fileViewModel.setUploadingState(false) // Снимаем состояние загрузки
+                            // Переносим очистку в конец
+                            fileViewModel.setUploadingState(false)
                             fileViewModel.clearGlobalFiles()
+                            fileNameList.clear() // Очистка списка имен только после завершения всех операций
+                            Log.d("MaterialTextFiled", "Очистка списков завершена")
                         }
                     } else {
-                        Log.e("MaterialTextFiled", "Файлы не найдены для загрузки")
+                        Log.e("MaterialTextFiled", "Файлы отсутствуют для загрузки")
                     }
                 }
+
             }
 
 
