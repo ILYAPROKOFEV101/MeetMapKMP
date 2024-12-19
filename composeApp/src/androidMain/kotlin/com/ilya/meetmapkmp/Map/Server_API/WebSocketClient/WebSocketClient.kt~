@@ -38,7 +38,7 @@ class  WebSocketClient(private val url: String) : WebSocketListener() {
             Log.e("WebSocket", "Error: ${t.message}", t)
             deferredResponse?.completeExceptionally(t)
             onConnectionFailure(t, response)
-          //  retryConnection()
+            retryConnection()
         }
     }
 
@@ -82,5 +82,10 @@ class  WebSocketClient(private val url: String) : WebSocketListener() {
         }
     }
 
-
+    private fun retryConnection() {
+        Log.d("WebSocket", "Retrying connection in 2 seconds...")
+        Handler(Looper.getMainLooper()).postDelayed({
+            start()
+        }, 2000)
+    }
 }

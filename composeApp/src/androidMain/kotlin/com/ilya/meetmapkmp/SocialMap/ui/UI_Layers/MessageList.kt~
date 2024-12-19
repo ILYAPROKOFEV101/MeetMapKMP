@@ -376,7 +376,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
 
                         // Очищаем текстовое поле
                         text = ""
-                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: ${filesWithNames}")
+                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: ${filesWithNames.map { it.second }}")
                     } catch (e: Exception) {
                         Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
                     }
@@ -385,7 +385,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         // Загружаем файлы в хранилище
-                        val filesWithNames = fileViewModel.getFileandFileNmae()
+                        val filesWithNames = fileViewModel.getAllFiles()
 
                         if (filesWithNames.isNotEmpty()) {
                             fileViewModel.setUploadingState(true) // Устанавливаем состояние загрузки

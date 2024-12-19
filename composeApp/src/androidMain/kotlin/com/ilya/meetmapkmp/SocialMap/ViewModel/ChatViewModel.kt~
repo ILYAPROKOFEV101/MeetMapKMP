@@ -34,7 +34,7 @@ class ChatViewModel : ViewModel() {
 
 
     fun sendMessage(content: String, imageUrls: List<String>, videoUrls: List<String>, gifUrls: List<String>, fileUrls: List<String>) {
-        val message = Messageformat(content, gifUrls, imageUrls, videoUrls,  fileUrls)
+        val message = Messageformat(content,gifUrls, imageUrls, videoUrls,  fileUrls)
 
         // Сериализуем объект Messageformat в строку JSON
         val jsonMessage = Json.encodeToString(message)
