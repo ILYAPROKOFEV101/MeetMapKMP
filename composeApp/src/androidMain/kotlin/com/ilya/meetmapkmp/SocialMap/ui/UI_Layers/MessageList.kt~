@@ -89,8 +89,6 @@ import createTempFileFromUri
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
@@ -291,7 +289,6 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     var text by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
     val fileViewModel: FileViewModel = viewModel()
-    val fileNameList = remember { mutableStateListOf<String>() } // Хранилище для названий файлов
 
 
     // Лаунчер для выбора нескольких файлов из галереи
@@ -308,8 +305,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                         val uniqueFileName = "${UUID.randomUUID()}.png"
 
                         // Добавляем файл и имя в соответствующие списки
-                        fileViewModel.addFile(tempFile) // Файл во ViewModel
-                        fileNameList.add(uniqueFileName) // Уникальное имя в список
+                        fileViewModel.addFile(tempFile, uniqueFileName) // Файл во ViewModel
                         Log.d("MaterialTextFiled", "Файл добавлен: $uniqueFileName")
                     } ?: Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
@@ -364,86 +360,66 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .weight(0.1f)
                 .align(Alignment.CenterVertically),
             onClick = {
-                // Отправка сообщения с несколькими файлами
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
+                        // Получаем список файлов с именами
+                        val filesWithNames = fileViewModel.getAllFileNames()
+
                         // Отправляем сообщение с именами файлов
                         chatViewModel.sendMessage(
                             content = text.toString(),
-                            imageUrls = fileNameList, // Список уникальных имен файлов
+                            imageUrls = filesWithNames, // Имена файлов
                             videoUrls = emptyList(),
                             gifUrls = emptyList(),
                             fileUrls = emptyList()
                         )
+
+                        // Очищаем текстовое поле
                         text = ""
-                        fileNameList.clear() // Очищаем список имен файлов
-                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: $fileNameList")
+                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: ${filesWithNames.map { it.second }}")
                     } catch (e: Exception) {
                         Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
                     }
                 }
 
                 CoroutineScope(Dispatchers.IO).launch {
-                    // Получаем список Uri из ViewModel
-                    val uris = fileViewModel.globalFiles.value
+                    try {
+                        // Загружаем файлы в хранилище
+                        val filesWithNames = fileViewModel.getAllFiles()
 
+                        if (filesWithNames.isNotEmpty()) {
+                            fileViewModel.setUploadingState(true) // Устанавливаем состояние загрузки
 
-                    if (uris != null && uris.isNotEmpty()) {
-                        fileViewModel.setUploadingState(true) // Устанавливаем состояние загрузки
-
-                        try {
-                            Log.d("MaterialTextFiled", "Начинаем загрузку файлов: $uris")
-
-                            // Параллельная обработка всех файлов
-                            val uploadResults = uris.map { uri ->
-                                async {
-                                    // Проверяем, что uri имеет тип Uri
-                                    if (uri != null) {
-                                        val tempFile = createTempFileFromUri(context, uri) // Создаём временный файл
-                                        tempFile?.let { file ->
-                                            val fileName = UUID.randomUUID().toString() + ".png" // Генерация уникального имени файла
-                                            val success = bucketManager.createBucketAndUploadPhoto(
-                                                bucketName = "avatars",
-                                                fileName = fileName,
-                                                file = file.readBytes(),
-                                                log = androidLog("BucketManager")
-                                            )
-                                            if (success) {
-                                                Log.d("MaterialTextFiled", "Загрузка успешна: $fileName")
-                                                file.delete() // Удаляем временный файл
-                                                true
-                                            } else {
-                                                Log.e("MaterialTextFiled", "Ошибка при загрузке файла: $fileName")
-                                                false
-                                            }
-                                        } ?: false
+                            filesWithNames.forEach { (file, fileName) ->
+                                try {
+                                    val success = bucketManager.createBucketAndUploadPhoto(
+                                        bucketName = "avatars",
+                                        fileName = fileName,
+                                        file = file.readBytes(),
+                                        log = androidLog("BucketManager")
+                                    )
+                                    if (success) {
+                                        Log.d("MaterialTextFiled", "Загрузка успешна: $fileName")
                                     } else {
-                                        Log.e("MaterialTextFiled", "Uri is null")
-                                        false
+                                        Log.e("MaterialTextFiled", "Ошибка при загрузке файла: $fileName")
                                     }
+                                } catch (e: Exception) {
+                                    Log.e("MaterialTextFiled", "Ошибка при обработке файла $fileName: ${e.message}")
                                 }
                             }
-
-                            // Дожидаемся завершения загрузки всех файлов
-                            val results = uploadResults.awaitAll()
-                            val successfulUploads = results.count { it }
-                            Log.d("MaterialTextFiled", "Успешно загружено файлов: $successfulUploads из ${uris.size}")
-
-                        } catch (e: Exception) {
-                            Log.e("MaterialTextFiled", "Ошибка загрузки файлов: ${e.message}")
-                        } finally {
-                            fileViewModel.setUploadingState(false) // Завершаем состояние загрузки
-                            fileViewModel.clearGlobalFiles() // Очищаем список файлов в ViewModel
-                            Log.d("MaterialTextFiled", "Очистка списков завершена")
+                        } else {
+                            Log.e("MaterialTextFiled", "Нет файлов для загрузки")
                         }
-                    } else {
-                        Log.e("MaterialTextFiled", "Нет файлов для загрузки")
+                    } catch (e: Exception) {
+                        Log.e("MaterialTextFiled", "Общая ошибка при загрузке файлов: ${e.message}")
+                    } finally {
+                        fileViewModel.setUploadingState(false)
+                        fileViewModel.clearFileList() // Очищаем список файлов и имен после загрузки
+                        Log.d("MaterialTextFiled", "Очистка завершена")
                     }
                 }
-
-
-
             }
+
 
 
         ) {
