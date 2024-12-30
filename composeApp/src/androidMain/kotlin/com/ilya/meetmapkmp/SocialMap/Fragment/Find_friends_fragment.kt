@@ -205,12 +205,14 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
                         viewModel.updateUsername(it)
                     },
                     textStyle = MaterialTheme.typography.bodyLarge,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        cursorColor = MaterialTheme.colorScheme.onSurface,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
+                        colors = TextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedIndicatorColor = MaterialTheme.colorScheme.surface,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
+                            cursorColor = MaterialTheme.colorScheme.onSurface,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Search,
                         keyboardType = KeyboardType.Text

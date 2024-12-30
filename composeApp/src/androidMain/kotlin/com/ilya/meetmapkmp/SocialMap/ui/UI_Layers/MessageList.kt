@@ -7,6 +7,7 @@ import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -39,6 +40,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
@@ -48,6 +50,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -287,13 +290,11 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
 fun Material_text_filed(chatViewModel: ChatViewModel) {
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
     val fileViewModel: FileViewModel = viewModel()
 
-
-    // Лаунчер для выбора нескольких изображений
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(),
         onResult = { uris ->
             uris?.let {
                 Log.d("MaterialTextFiled", "Выбраны изображения: $uris")
@@ -314,6 +315,12 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
 
 
 
+
+
+
+
+
+
     Row(
         Modifier
             .fillMaxWidth()
@@ -326,11 +333,15 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
             onClick = {
                 // Открытие галереи для выбора изображений
                 Log.d("MaterialTextFiled", "Открываем галерею для выбора изображений")
-                launcher.launch(arrayOf("image/*")) // Ограничиваем выбор только изображениями
-        }
+
+                photoPickerLauncher.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+
+            }
         ) {
             Icon(
-                imageVector = Icons.Default.AddPhotoAlternate,
+                imageVector = Icons.Default.Add,
                 contentDescription = "Send"
             )
         }
@@ -343,11 +354,12 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 .height(80.dp),
 
             colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White, // Цвет контейнера при фокусе
-                unfocusedContainerColor = Color.White, // Цвет контейнера без фокуса
-                disabledContainerColor = Color.White, // Цвет контейнера, когда поле недоступно
-                cursorColor = Color.White, // Цвет курсора
-
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedIndicatorColor = MaterialTheme.colorScheme.surface,
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.onSurface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface
             ),
             maxLines = 10
         )
