@@ -291,21 +291,17 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     val fileViewModel: FileViewModel = viewModel()
 
 
-    // Лаунчер для выбора нескольких файлов из галереи
+    // Лаунчер для выбора нескольких изображений
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
         onResult = { uris ->
             uris?.let {
-                Log.d("MaterialTextFiled", "Файлы выбраны: $uris")
-
+                Log.d("MaterialTextFiled", "Выбраны изображения: $uris")
                 it.forEach { uri ->
                     val file = createTempFileFromUri(context, uri)
                     file?.let { tempFile ->
-                        // Генерируем уникальное имя для файла
                         val uniqueFileName = "${UUID.randomUUID()}.png"
-
-                        // Добавляем файл и имя в соответствующие списки
-                        fileViewModel.addFile(tempFile, uniqueFileName) // Файл во ViewModel
+                        fileViewModel.addFile(tempFile, uniqueFileName)
                         Log.d("MaterialTextFiled", "Файл добавлен: $uniqueFileName")
                     } ?: Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
@@ -330,8 +326,8 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
             onClick = {
                 // Открытие галереи для выбора изображений
                 Log.d("MaterialTextFiled", "Открываем галерею для выбора изображений")
-                launcher.launch(arrayOf("image/*")) // Ограничиваем выбор только изображениями
-            }
+                launcher.launch("image/*") // Ограничиваем выбор только изображениями
+        }
         ) {
             Icon(
                 imageVector = Icons.Default.AddPhotoAlternate,
@@ -376,7 +372,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
 
                         // Очищаем текстовое поле
                         text = ""
-                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: ${filesWithNames.map { it.second }}")
+                        Log.d("MaterialTextFiled", "Сообщение отправлено с файлами: ${filesWithNames}")
                     } catch (e: Exception) {
                         Log.e("MaterialTextFiled", "Ошибка при отправке сообщения: ${e.message}")
                     }
@@ -385,7 +381,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         // Загружаем файлы в хранилище
-                        val filesWithNames = fileViewModel.getAllFiles()
+                        val filesWithNames = fileViewModel.getFileandFileNmae()
 
                         if (filesWithNames.isNotEmpty()) {
                             fileViewModel.setUploadingState(true) // Устанавливаем состояние загрузки
@@ -419,7 +415,6 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                     }
                 }
             }
-
 
 
         ) {

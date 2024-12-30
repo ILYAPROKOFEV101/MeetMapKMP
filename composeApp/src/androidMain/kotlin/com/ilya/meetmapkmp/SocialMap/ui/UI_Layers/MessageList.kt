@@ -291,21 +291,17 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     val fileViewModel: FileViewModel = viewModel()
 
 
-    // Лаунчер для выбора нескольких файлов из галереи
+    // Лаунчер для выбора нескольких изображений
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenMultipleDocuments(),
         onResult = { uris ->
             uris?.let {
-                Log.d("MaterialTextFiled", "Файлы выбраны: $uris")
-
+                Log.d("MaterialTextFiled", "Выбраны изображения: $uris")
                 it.forEach { uri ->
                     val file = createTempFileFromUri(context, uri)
                     file?.let { tempFile ->
-                        // Генерируем уникальное имя для файла
                         val uniqueFileName = "${UUID.randomUUID()}.png"
-
-                        // Добавляем файл и имя в соответствующие списки
-                        fileViewModel.addFile(tempFile, uniqueFileName) // Файл во ViewModel
+                        fileViewModel.addFile(tempFile, uniqueFileName)
                         Log.d("MaterialTextFiled", "Файл добавлен: $uniqueFileName")
                     } ?: Log.e("MaterialTextFiled", "Ошибка создания временного файла")
                 }
@@ -331,7 +327,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 // Открытие галереи для выбора изображений
                 Log.d("MaterialTextFiled", "Открываем галерею для выбора изображений")
                 launcher.launch(arrayOf("image/*")) // Ограничиваем выбор только изображениями
-            }
+        }
         ) {
             Icon(
                 imageVector = Icons.Default.AddPhotoAlternate,
@@ -419,7 +415,6 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                     }
                 }
             }
-
 
 
         ) {
