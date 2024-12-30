@@ -204,6 +204,7 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
                         0xFFFFFFFF
                     )
                 ),
+
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(

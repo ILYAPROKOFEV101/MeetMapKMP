@@ -1,0 +1,18 @@
+CREATE TABLE markers (
+    id TEXT PRIMARY KEY,
+    key TEXT,
+    username TEXT,
+    imguser TEXT,
+    photomark TEXT,
+    street TEXT,
+    lat REAL,
+    lon REAL,
+    name TEXT,
+    whatHappens TEXT,
+    startDate TEXT,
+    endDate TEXT,
+    startTime TEXT,
+    endTime TEXT,
+    participants INTEGER,
+    access INTEGER
+);
