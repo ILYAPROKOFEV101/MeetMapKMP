@@ -1,0 +1,7 @@
+package com.ilya.meetmapkmp.SocialMap.DATAServices.Storeg
+
+import com.ilya.Supabase.BucketManager
+import kotlinx.coroutines.Dispatchers
+
+val bucketManager = BucketManager(ioDispatcher = Dispatchers.IO)
+

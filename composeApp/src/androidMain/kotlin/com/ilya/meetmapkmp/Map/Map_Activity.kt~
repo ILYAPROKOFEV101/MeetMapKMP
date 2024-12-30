@@ -521,7 +521,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                         val currentLatLng = LatLng(it.latitude, it.longitude)
                         currentLatLngGlobal = currentLatLng
                         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 15f))
-                        mapViewModel.fetchMarkers(uid_main, LatLng(it.latitude, it.longitude))
+
                         lifecycleScope.launch {
                                 try {
                                     mapViewModel.markers.collect { markers ->

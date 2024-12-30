@@ -326,7 +326,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
             onClick = {
                 // Открытие галереи для выбора изображений
                 Log.d("MaterialTextFiled", "Открываем галерею для выбора изображений")
-                launcher.launch(arrayOf("image/*")) // Ограничиваем выбор только изображениями
+                launcher.launch("image/*") // Ограничиваем выбор только изображениями
         }
         ) {
             Icon(
