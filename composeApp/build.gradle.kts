@@ -10,7 +10,8 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.googleGmsGoogleServices)
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10" // Используйте актуальную версию
+    alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.sqlDelight)
 }
 val ktor_version = "3.0.1"
 
@@ -164,6 +165,9 @@ kotlin {
             implementation(platform("io.github.jan-tennert.supabase:bom:3.0.2"))
 
             implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
+            // sqldelight
+            implementation(libs.koin.android)
+
 
         }
         commonMain.dependencies {
@@ -183,8 +187,21 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
             implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+
+            implementation(libs.kotlinx.datetime)
+
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
         }
         iosMain.dependencies {
+            implementation(libs.sqldelight.ios)
             implementation("io.ktor:ktor-client-darwin:2.3.4")
         }
         desktopMain.dependencies {
@@ -234,6 +251,14 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.ilya.meetmapkmp"
             packageVersion = "1.0.0"
+        }
+    }
+}
+
+sqldelight {
+    databases {
+        create("PostDatabase") {
+            packageName.set("com.ilya")
         }
     }
 }
