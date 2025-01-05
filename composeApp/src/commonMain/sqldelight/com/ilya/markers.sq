@@ -1,0 +1,31 @@
+CREATE TABLE markers (
+    id TEXT PRIMARY KEY,
+    [key] TEXT NOT NULL,
+    username TEXT NOT NULL,
+    imguser TEXT NOT NULL,
+    photomark TEXT NOT NULL,
+    street TEXT NOT NULL,
+    lat REAL NOT NULL,
+    lon REAL NOT NULL,
+    name TEXT NOT NULL,
+    whatHappens TEXT NOT NULL,
+    startDate TEXT NOT NULL,
+    endDate TEXT NOT NULL,
+    startTime TEXT NOT NULL,
+    endTime TEXT NOT NULL,
+    participants INTEGER NOT NULL,
+    access INTEGER NOT NULL
+);
+
+
+-- Получение записи по id
+SELECT * FROM markers WHERE id = ?;
+
+-- Удаление записи по id
+DELETE FROM markers WHERE id = ?;
+
+-- Вставка новой записи
+INSERT INTO markers (
+    id, key, username, imguser, photomark, street, lat, lon, name, whatHappens,
+    startDate, endDate, startTime, endTime, participants, access
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);

@@ -105,8 +105,6 @@ import java.util.UUID
 @Composable
 fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: String, my_key: String) {
 
-
-
     val messages by chatViewModel.messages.collectAsState()
     val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
     val Notmy_message_color = if (isSystemInDarkTheme()) Color(0xFFFFFFFF) else Color(0xFF2315FF3)
@@ -169,13 +167,13 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
     )
     Column(modifier = Modifier)
     {
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start
     ) {
-
             val imageModifier = Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(40.dp))

@@ -15,6 +15,16 @@ plugins {
 }
 val ktor_version = "3.0.1"
 
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("com.ilya")
+        }
+    }
+}
+
+
+
 kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -37,24 +47,7 @@ kotlin {
     jvm("desktop")
     
     @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        moduleName = "composeApp"
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
-    }
+
     
     sourceSets {
         val desktopMain by getting
@@ -167,6 +160,8 @@ kotlin {
             implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
             // sqldelight
             implementation(libs.koin.android)
+            implementation(libs.sqldelight.driver.android)
+
 
 
         }
@@ -199,6 +194,8 @@ kotlin {
 
             implementation(libs.multiplatform.settings)
             implementation(libs.multiplatform.settings.no.arg)
+            
+
         }
         iosMain.dependencies {
             implementation(libs.sqldelight.ios)
@@ -251,14 +248,6 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "com.ilya.meetmapkmp"
             packageVersion = "1.0.0"
-        }
-    }
-}
-
-sqldelight {
-    databases {
-        create("PostDatabase") {
-            packageName.set("com.ilya")
         }
     }
 }

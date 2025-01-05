@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -88,11 +89,16 @@ import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.profile.IMG
 import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
+import com.ilya.meetmapkmp.Map.DB.convertMarkerDataListToMarkerList
+import com.ilya.meetmapkmp.Map.DB.convertMarkerListToMarkerDataList
 import com.ilya.meetmapkmp.Map.Server_API.GET.getAddressFromCoordinates
 import com.ilya.meetmapkmp.Map.Server_API.POST.postInvite
 import com.ilya.meetmapkmp.Map.ViewModel.MapViewModel
+import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModel
+import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModelFactory
 import com.ilya.meetmapkmp.R
 import com.ilya.meetmapkmp.SocialMap.SocialMapActivity
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 import decodePoly
 import generateUID
@@ -123,6 +129,8 @@ import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+
+
 
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -156,7 +164,6 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     private lateinit var shakeDetector: ShakeDetector
     val mapViewModel: MapViewModel  by viewModels()
 
-
     val webSocketManager = WebSocketManager(client, this)
 
     private companion object {
@@ -171,19 +178,17 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
 
+
+       var DBViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
         // Инициализация WebSocketClient
         val uid_user = ID(userData = googleAuthUiClient.getSignedInUser())
 
 
         val url = "wss://meetmap.up.railway.app/map/$uid_user/${getUserKey(this)}"
         webSocketClient = WebSocketClient(url)
-
-
-
-
-
-
-
 
         val name = UID(userData = googleAuthUiClient.getSignedInUser())
         val img = IMG(userData = googleAuthUiClient.getSignedInUser())
@@ -239,35 +244,43 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         supportActionBar?.hide()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        // Пример вызова этой функции из корутины
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            initializeMap()
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                MY_PERMISSIONS_REQUEST_LOCATION
-            )
-        }
-                //WEBSOCKET
-            // получаю данные по метка где я участник, по websoket
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) { initializeMap() } else { ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), MY_PERMISSIONS_REQUEST_LOCATION) }
+
         CoroutineScope(Dispatchers.IO).launch {
             lifecycleScope.launch {
                 var previousMarkers: List<MarkerData>? = null // Храним предыдущие данные
                 val markerList: MutableList<MarkerData> = mutableListOf()
+
+                // 1. Загружаем маркеры из базы данных и отображаем их на карте
+                val initialMarkers = convertMarkerListToMarkerDataList(DBViewModel.getAllMarkers())
+                handleReceivedMarkers("$uid", initialMarkers.toMutableList())
+
+                initialMarkers.forEach { markerData ->
+                    Log.d("MYmarkesrs", "Marker from DB: $markerData")
+
+                    // Преобразование MarkerData в MapMarker
+                    val mapMarker = markerDataToMapMarker(markerData)
+
+                    // Добавление маркера на карту
+                    val markerLatLng = LatLng(mapMarker.lat, mapMarker.lon)
+                    val marker = addMarker(markerLatLng, mapMarker.name)
+                    if (marker != null) {
+                        markerDataMap[marker] = mapMarker
+                    }
+                }
+
                 while (true) {
                     try {
-                        // Получаем данные через getParticipant
-                        val currentMarkers = getParticipant(uid.toString(), getUserKey(this@Map_Activity).toString())
+                        // Получаем новые данные с сервера
+                        val currentMarkers = convertMarkerListToMarkerDataList(DBViewModel.getAllMarkers())
+                        val server = getParticipant(uid.toString(), getUserKey(this@Map_Activity).toString())
 
-                        Log.d("WebSocket", "Received marker data: $currentMarkers")
+                        DBViewModel.addMarkers(convertMarkerDataListToMarkerList(server))
+                        Log.d("MYmarkesrs", "Received marker data: $currentMarkers")
 
-                        // Сравниваем текущие данные с предыдущими
+                        // 2. Сравниваем текущие данные с предыдущими
                         if (currentMarkers != previousMarkers) {
                             // Данные изменились, обрабатываем их
                             handleReceivedMarkers("$uid", currentMarkers.toMutableList())
@@ -275,7 +288,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                             withContext(Dispatchers.Main) {
                                 // Обновление UI или выполнение других действий с данными
                                 currentMarkers.forEach { markerData ->
-                                    Log.d("WebSocket", "Marker: $markerData")
+                                    Log.d("MYmarkesrs", "New Marker: $markerData")
 
                                     // Преобразование MarkerData в MapMarker
                                     val mapMarker = markerDataToMapMarker(markerData)
@@ -301,6 +314,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                 }
             }
         }
+
 
     }
 
