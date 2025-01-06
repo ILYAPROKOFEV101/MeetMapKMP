@@ -2,6 +2,7 @@ package com.ilya.platform.di
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteException
 import android.util.Log
 
 class MarkersQueriesImpl(private val database: SQLiteDatabase) {
@@ -64,8 +65,14 @@ class MarkersQueriesImpl(private val database: SQLiteDatabase) {
     }
 
     fun deleteMarkerById(id: String) {
-        database.execSQL("DELETE FROM markers WHERE id = ?", arrayOf(id))
+        try {
+            database.execSQL("DELETE FROM markers WHERE id = ?", arrayOf(id))
+            Log.d("MarkersQueriesImpl", "Marker with id $id deleted successfully")
+        } catch (e: Exception) {
+            Log.e("MarkersQueriesImpl", "Error deleting marker with id $id", e)
+        }
     }
+
 
     fun getAllMarkers(): List<Marker> {
         val markers = mutableListOf<Marker>()

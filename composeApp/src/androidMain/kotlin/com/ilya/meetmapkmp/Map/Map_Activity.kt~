@@ -173,16 +173,17 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     private lateinit var handlerThread: HandlerThread
 
     var uid_main = ""
-
+    var DBViewModel = ViewModelProvider(
+        this,
+        PersonalizedMarkersViewModelFactory(applicationContext)
+    ).get(PersonalizedMarkersViewModel::class.java)
+    
     override fun onCreate(savedInstanceState: Bundle?)  {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
 
 
-       var DBViewModel = ViewModelProvider(
-            this,
-            PersonalizedMarkersViewModelFactory(applicationContext)
-        ).get(PersonalizedMarkersViewModel::class.java)
+
         // Инициализация WebSocketClient
         val uid_user = ID(userData = googleAuthUiClient.getSignedInUser())
 
@@ -327,10 +328,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
     private suspend fun handleReceivedMarkers(uid: String, markerList: MutableList<MarkerData>) {
 
-        var DBViewModel = ViewModelProvider(
-            this,
-            PersonalizedMarkersViewModelFactory(applicationContext)
-        ).get(PersonalizedMarkersViewModel::class.java)
+
 
         withContext(Dispatchers.Main) {
 

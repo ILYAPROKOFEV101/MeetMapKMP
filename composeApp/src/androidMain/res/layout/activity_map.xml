@@ -125,7 +125,7 @@
         <LinearLayout
             android:id="@+id/bottomSheet"
             android:layout_width="match_parent"
-            android:layout_height="400dp"
+            android:layout_height="500dp"
             android:background="@drawable/rounded_background"
             android:minHeight="90dp"
             android:orientation="vertical"

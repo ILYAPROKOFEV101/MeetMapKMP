@@ -49,9 +49,8 @@ class MarkerAdapter(
             delte_marker_button.setOnClickListener {
                 CoroutineScope(Dispatchers.Main).launch {
                     val success = deleteParticipantMarker(uid, key, marker.id)
-                    viewmodel.deleteMarkerById(marker.id)
                     if (success) {
-
+                        viewmodel.deleteMarkerById(marker.id)
                         val position = adapterPosition
                         if (position != RecyclerView.NO_POSITION) {
                             markerList.removeAt(position) // Удаляем элемент из списка
