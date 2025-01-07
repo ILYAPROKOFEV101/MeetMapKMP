@@ -1,5 +1,6 @@
 package com.ilya.meetmapkmp.Map.DB
 
+import MapMarker
 import MarkerData
 import com.ilya.platform.di.Marker
 
@@ -45,6 +46,30 @@ fun convertMarkerListToMarkerDataList(markerList: List<Marker>): List<MarkerData
             endTime = marker.endTime,
             participants = marker.participants,
             access = marker.access == 1 // предполагаем, что access в Marker является числом (0 или 1)
+        )
+    }
+}
+
+
+fun convertMarkerListToMapMarkerList(markerList: List<Marker>): List<MapMarker> {
+    return markerList.map { marker ->
+        MapMarker(
+            key = marker.key,
+            username = marker.username,
+            imguser = marker.imguser,
+            photomark = marker.photomark,
+            street = marker.street,
+            id = marker.id,
+            lat = marker.lat,
+            lon = marker.lon,
+            name = marker.name,
+            whatHappens = marker.whatHappens,
+            startDate = marker.startDate,
+            endDate = marker.endDate,
+            startTime = marker.startTime,
+            endTime = marker.endTime,
+            participants = marker.participants,
+            access = marker.access == 1 // Преобразуем Int в Boolean
         )
     }
 }

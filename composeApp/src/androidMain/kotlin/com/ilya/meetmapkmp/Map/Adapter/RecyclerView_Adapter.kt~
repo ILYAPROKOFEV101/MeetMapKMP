@@ -19,7 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class MarkerAdapter(
-    private val markerList: MutableList<MarkerData>, // Изменяемый список
+    private var markerList: MutableList<MarkerData>, // Изменяемый список
     private val onMarkerClickListener: Map_Activity, // Интерфейс в конструкторе
     private val uid: String,
     private val viewmodel: PersonalizedMarkersViewModel
@@ -44,45 +44,54 @@ class MarkerAdapter(
             endData.text = "${marker.endDate} Time:${marker.endTime}"
             find_marker_button.setOnClickListener {
                 onMarkerClickListener.onFindLocation(marker.lat, marker.lon)
-               // onMarkerClickListener.findLocation_route(marker.lat, marker.lon)
             }
             delte_marker_button.setOnClickListener {
-                CoroutineScope(Dispatchers.Main).launch {
-                    val success = deleteParticipantMarker(uid, key, marker.id)
-                    if (success) {
-                        viewmodel.deleteMarkerById(marker.id)
-                        val position = adapterPosition
-                        if (position != RecyclerView.NO_POSITION) {
-                            markerList.removeAt(position) // Удаляем элемент из списка
-                            notifyItemRemoved(position) // Уведомляем адаптер о удалении
+                val position = bindingAdapterPosition
+                if (position != RecyclerView.NO_POSITION) {
+                    val removedMarker = markerList[position]
+                    markerList.removeAt(position)
+                    notifyItemRemoved(position)
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        val success = deleteParticipantMarker(uid, key, removedMarker.id)
+                        viewmodel.deleteMarkerById(removedMarker.id)
+                        if (!success) {
+                            // Восстанавливаем элемент в случае ошибки
+                            markerList.add(position, removedMarker)
+                            notifyItemInserted(position)
                         }
                     }
                 }
             }
+
         }
     }
 
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MarkerViewHolder {
-            val view = LayoutInflater.from(parent.context).inflate(R.layout.item_marker, parent, false)
-            return MarkerViewHolder(view)
-        }
-
-        override fun onBindViewHolder(holder: MarkerViewHolder, position: Int) {
-            val marker = markerList[position]
-            Log.d("MarkerAdapter", "Binding marker: $marker")
-            holder.bind(marker)
-        }
-
-
-
-        override fun getItemCount(): Int {
-            return markerList.size
-        }
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MarkerViewHolder {
+        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_marker, parent, false)
+        return MarkerViewHolder(view)
     }
+
+    override fun onBindViewHolder(holder: MarkerViewHolder, position: Int) {
+        val marker = markerList[position]
+        holder.bind(marker)
+    }
+
+    override fun getItemCount(): Int {
+        return markerList.size
+    }
+
+    // Метод для обновления списка маркеров
+    fun updateMarkers(newMarkers: List<MarkerData>) {
+        markerList.clear()
+        markerList.addAll(newMarkers)
+        notifyDataSetChanged() // Полностью обновляем адаптер
+    }
+}
+
 
     // Класс для добавления отступов между элементами списка в RecyclerView
-    class SpaceItemDecoration(private val space: Int) : RecyclerView.ItemDecoration() {
+class SpaceItemDecoration(private val space: Int) : RecyclerView.ItemDecoration() {
         override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
             // Добавляем отступы, кроме последнего элемента
             if (parent.getChildAdapterPosition(view) != parent.adapter?.itemCount?.minus(1)) {

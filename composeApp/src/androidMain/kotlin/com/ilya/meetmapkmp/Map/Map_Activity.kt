@@ -162,7 +162,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     }
     private val client = OkHttpClient()
     private lateinit var shakeDetector: ShakeDetector
-    val mapViewModel: MapViewModel  by viewModels()
+
 
     val webSocketManager = WebSocketManager(client, this)
 
@@ -349,6 +349,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                 val adapter = recyclerView.adapter
                 if (adapter is MarkerAdapter) {
                     adapter.notifyDataSetChanged()
+                    adapter.updateMarkers(markerList)
                 } else {
                     recyclerView.adapter = MarkerAdapter(markerList, this@Map_Activity, uid, DBViewModel)
                 }
@@ -528,6 +529,11 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
             }
         }
 
+        val mapViewModel: MapViewModel by viewModels {
+            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
+        }
+
+
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.isMyLocationEnabled = true
 
@@ -589,7 +595,12 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
                         // Установка обработчика кликов по карте
                         mMap.setOnMapClickListener { latLng ->
-                            showAddMarkerDialog(latLng, this, uid_main, this)
+                            var DBViewModel = ViewModelProvider(
+                                this,
+                                PersonalizedMarkersViewModelFactory(applicationContext)
+                            ).get(PersonalizedMarkersViewModel::class.java)
+
+                            showAddMarkerDialog(latLng, this, uid_main, this, DBViewModel)
                         }
 
                         // Инициализация объекта Polyline
@@ -729,7 +740,12 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onMapClick(latLng: LatLng) {
-        showAddMarkerDialog(latLng, this, uid_main, this)
+        var DBViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
+
+        showAddMarkerDialog(latLng, this, uid_main, this, DBViewModel)
     }
 
     fun set_addMarker(latLng: LatLng, markerName: String){
@@ -865,7 +881,8 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         latLng: LatLng,
         context: Context,
         uid_main: String,
-        activity: FragmentActivity // добавлен параметр
+        activity: FragmentActivity, // добавлен параметр
+        DB_ViewModel: PersonalizedMarkersViewModel
     ) {
 
         // val addmarker = Map_Activity()
@@ -1008,11 +1025,11 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                             val markerDataJson = gson.toJson(markerData)
                             Log.d("PushDataJoin", "MarkerData JSON: $markerDataJson")
 
-                            // Запуск корутины для отправки данных на сервер
+                            // Запуск корутины для отправки данных на сервер и
                             CoroutineScope(Dispatchers.IO).launch {
                                 postInvite(getUserKey(context).toString(), uid_main, markerData)
+                                DB_ViewModel.addMarkers(convertMarkerDataListToMarkerList(listOf(markerData)))
                             }
-
 
                         }
                     }
