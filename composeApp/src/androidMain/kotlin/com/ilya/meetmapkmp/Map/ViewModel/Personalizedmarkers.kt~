@@ -31,11 +31,10 @@ class PersonalizedMarkersViewModel(
     private val context: Context
 ) : ViewModel() {
 
-
     private val databaseHelper = DatabaseHelper(context)
     private val markersQueries = MarkersQueriesImpl(databaseHelper.writableDatabase)
 
-    // Используем StateFlow для отслеживания изменений маркеров
+    // Используем StateFlow вместо LiveData для более современного подхода
     private val _markerList = MutableStateFlow<List<Marker>>(emptyList())
     val markerList: StateFlow<List<Marker>> get() = _markerList
 

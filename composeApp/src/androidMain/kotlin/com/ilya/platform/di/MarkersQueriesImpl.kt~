@@ -73,6 +73,7 @@ class MarkersQueriesImpl(private val database: SQLiteDatabase) {
         }
     }
 
+
     fun getAllMarkers(): List<Marker> {
         val markers = mutableListOf<Marker>()
         val cursor = database.rawQuery("SELECT * FROM markers", null)

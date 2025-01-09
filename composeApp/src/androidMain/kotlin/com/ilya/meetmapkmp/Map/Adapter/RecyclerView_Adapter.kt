@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.ilya.meetmapkmp.Map.DB.convertMarkerDataListToMarkerList
 import com.ilya.meetmapkmp.Map.Server_API.DELETE.deleteParticipantMarker
 import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModel
 import com.ilya.meetmapkmp.Mine_menu.Map_Activity
@@ -24,7 +25,7 @@ class MarkerAdapter(
     private val uid: String,
     private val viewmodel: PersonalizedMarkersViewModel
 ) : RecyclerView.Adapter<MarkerAdapter.MarkerViewHolder>() {
-
+        val Map = Map_Activity()
     private val key = getUserKey(onMarkerClickListener).toString()
 
     inner class MarkerViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -55,6 +56,8 @@ class MarkerAdapter(
                     CoroutineScope(Dispatchers.Main).launch {
                          deleteParticipantMarker(uid, key, removedMarker.id)
                         viewmodel.deleteMarkerById(removedMarker.id)
+                       // val mapMarker = convertMarkerDataListToMarkerList(removedMarker)
+                            //    removeSpecificMarker(mapMarker)
                         /*if (!success) {
                             // Восстанавливаем элемент в случае ошибки
                             markerList.add(position, removedMarker)
@@ -80,6 +83,9 @@ class MarkerAdapter(
     override fun getItemCount(): Int {
         return markerList.size
     }
+
+
+
 
     // Метод для обновления списка маркеров
     fun updateMarkers(newMarkers: List<MarkerData>) {

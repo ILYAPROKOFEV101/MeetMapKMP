@@ -744,23 +744,28 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
 
 
-    private fun addMarker(latLng: LatLng, markerName: String): Marker? {
+   private fun addMarker(latLng: LatLng, markerName: String): Marker? {
+        // Проверьте, инициализирована ли карта
         if (::mMap.isInitialized) {
+            // Добавьте новую метку
             val marker = mMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
                     .title(markerName)
                     .icon(
                         bitmapDescriptorFromVector(
-                            this@Map_Activity,
-                            R.drawable.location_on_,
-                            "FF005B",
-                            140,
-                            140
+                            this@Map_Activity, // Контекст (возможно, вам понадобится другой)
+                            R.drawable.location_on_, // Ресурс маркера
+                            "FF005B", // Цвет маркера в шестнадцатеричном формате
+                            140, // Ширина маркера
+                            140  // Высота маркера
                         )
                     )
             )
-            marker?.let { markers.add(it) } // Добавляем метку в список
+            // Сохраните метку в переменную destinationMarker, если нужно
+            destinationMarker = marker
+
+            // Возвращаем созданную метку
             return marker
         } else {
             Log.e("MapError", "mMap не инициализирован")
