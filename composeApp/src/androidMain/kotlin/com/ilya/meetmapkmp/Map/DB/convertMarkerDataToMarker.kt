@@ -75,3 +75,45 @@ fun convertMarkerListToMapMarkerList(markerList: List<Marker>): List<MapMarker> 
 }
 
 
+fun convertMapMarkerToMarkerData(mapMarker: MapMarker): MarkerData {
+    return MarkerData(
+        id = mapMarker.id,
+        key = mapMarker.key,
+        username = mapMarker.username,
+        imguser = mapMarker.imguser,
+        photomark = mapMarker.photomark,
+        street = mapMarker.street,
+        lat = mapMarker.lat,
+        lon = mapMarker.lon,
+        name = mapMarker.name,
+        whatHappens = mapMarker.whatHappens,
+        startDate = mapMarker.startDate,
+        endDate = mapMarker.endDate,
+        startTime = mapMarker.startTime,
+        endTime = mapMarker.endTime,
+        participants = mapMarker.participants,
+        access = mapMarker.access
+    )
+}
+
+
+fun convertMarkerDataToMarker(markerData: MarkerData): Marker {
+    return Marker(
+        id = markerData.id,
+        key = markerData.key,
+        username = markerData.username,
+        imguser = markerData.imguser,
+        photomark = markerData.photomark,
+        street = markerData.street,
+        lat = markerData.lat,
+        lon = markerData.lon,
+        name = markerData.name,
+        whatHappens = markerData.whatHappens,
+        startDate = markerData.startDate,
+        endDate = markerData.endDate,
+        startTime = markerData.startTime,
+        endTime = markerData.endTime,
+        participants = markerData.participants,
+        access = if (markerData.access) 1 else 0
+    )
+}
