@@ -3,6 +3,7 @@ package com.ilya.meetmapkmp.Mine_menu
 
 import com.ilya.meetmapkmp.Map.Server_API.POST.Became_Participant_fun
 import MapMarker
+
 import MarkerAdapter
 import MarkerData
 import SpaceItemDecoration
@@ -92,7 +93,8 @@ import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
 import com.ilya.meetmapkmp.Map.DB.convertMapMarkerToMarkerData
 import com.ilya.meetmapkmp.Map.DB.convertMarkerDataListToMarkerList
 import com.ilya.meetmapkmp.Map.DB.convertMarkerListToMarkerDataList
-import com.ilya.meetmapkmp.Map.Interfaces.OnMarkerClickListener
+import com.ilya.meetmapkmp.Map.Interfaces.MarkerManager
+
 import com.ilya.meetmapkmp.Map.Server_API.GET.getAddressFromCoordinates
 import com.ilya.meetmapkmp.Map.Server_API.POST.postInvite
 import com.ilya.meetmapkmp.Map.ViewModel.MapViewModel
@@ -130,14 +132,15 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 
 
 
 @OptIn(ExperimentalPermissionsApi::class)
-class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMapClickListener, OnMarkerClickListener,
-WebSocketCallback {
+class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMapClickListener,
+     WebSocketCallback, MarkerManager {
 
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -166,13 +169,15 @@ WebSocketCallback {
     private lateinit var shakeDetector: ShakeDetector
     private var isItemDecorationAdded = false // Флаг
     private val webSocketManager = WebSocketManager(client, this)
+    val markerDataMap: MutableMap<Marker, MarkerData> = ConcurrentHashMap()
+
     private companion object {
         private const val MY_PERMISSIONS_REQUEST_LOCATION = 1
     }
 
     // Список для хранения данных маркеров (MarkerData)
     // Создайте map для хранения связи между маркерами карты и данными
-    private val markerDataMap: MutableMap<Marker, MarkerData> = mutableMapOf()
+ //   private val markerDataMap: MutableMap<Marker, MarkerData> = mutableMapOf()
 
 
 
@@ -318,12 +323,7 @@ WebSocketCallback {
             }
         }
 
-
-
     }
-
-
-
 
         // нужно чтобы отоброжать данные по меткам в нижнем баре
     private suspend fun handleReceivedMarkers(uid: String, markerList: MutableList<MarkerData>) {
@@ -348,22 +348,15 @@ WebSocketCallback {
                 }
 
 
-
             // Устанавливаем адаптер с нужными параметрами
             recyclerView.adapter = MarkerAdapter(
                 markerList,
                 this@Map_Activity, // Передаем Map_Activity для обработки кликов
-                object : OnMarkerClickListener {
-
-                    override fun removeSpecificMarker(markerData: MarkerData) {
-                        CoroutineScope(Dispatchers.Main).launch {
-                        removeSpecificMarker(markerData)
-                    }
-                    }
-                },
+                this@Map_Activity,  // Передаем MapMarkerManager для управления маркерами
                 uid,
                 DBViewModel
             )
+
             }
     }
 
@@ -456,29 +449,6 @@ WebSocketCallback {
             }
         }
 
-    override fun removeSpecificMarker(markerData: MarkerData) {
-        if (markerDataMap.isEmpty()) {
-            Log.d("RemoveMarker", "Список меток пуст")
-        } else {
-            Log.d("RemoveMarker", "Текущие метки: ${markerDataMap.values.joinToString { it.id }}")
-        }
-
-        // Находим запись в markerDataMap по id
-        val markerToRemove = markerDataMap.entries.find { it.value.id == markerData.id }
-        markerToRemove?.let { entry ->
-            Log.d("RemoveMarker", "Удаление метки: id=${markerData.id}")
-
-            // Удаляем маркер с карты
-            entry.key.remove()  // Удаление маркера с карты
-
-            // Удаляем метку из markerDataMap
-            markerDataMap.remove(entry.key)
-
-            Log.d("RemoveMarker", "Метка с id=${markerData.id} успешно удалена")
-        } ?: run {
-            Log.e("RemoveMarker", "Маркер с id=${markerData.id} не найден")
-        }
-    }
 
     fun onFindLocation(lat: Double, lon: Double) {
         findLocation_mark(lat, lon) // Вызов функции перемещения камеры
@@ -528,6 +498,7 @@ WebSocketCallback {
         this,
         PersonalizedMarkersViewModelFactory(applicationContext)
     ).get(PersonalizedMarkersViewModel::class.java)
+
 
         mMap = googleMap
         mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
@@ -621,6 +592,7 @@ WebSocketCallback {
                         updateDistance(it)
 
 
+                        // В вашей активности или фрагменте, где находится GoogleMap
                         mMap.setOnMarkerClickListener { marker ->
                             // Получаем данные маркера из map, используя сам объект marker
                             val mapMarker = markerDataMap[marker]
@@ -633,9 +605,6 @@ WebSocketCallback {
 
                             true  // Возвращаем true, чтобы предотвратить стандартное поведение (открытие InfoWindow)
                         }
-
-
-
 
 
                         // Установка обработчика кликов по карте
@@ -662,6 +631,36 @@ WebSocketCallback {
             }, 200) // Задержка в 0.2 секунду перед выполнением кода
         }
     }
+    override fun removeSpecificMarker(markerData: MarkerData) {
+        CoroutineScope(Dispatchers.Main).launch {
+            Log.d("RemoveMarker", "Попытка удалить маркер с id=${markerData.id}")
+            Log.d(
+                "RemoveMarker",
+                "Состояние markerDataMap до удаления: ${markerDataMap.entries.map { "key=${it.key.title}, id=${it.value.id}" }}"
+            )
+
+            val markerToRemove = withContext(Dispatchers.Default) {
+                markerDataMap.entries.find { it.value.id == markerData.id }
+            }
+
+            markerToRemove?.let { entry ->
+                // Удаление маркера с карты
+                entry.key.remove()
+
+                // Удаление маркера из коллекции
+                markerDataMap.remove(entry.key)
+
+                Log.d("RemoveMarker", "Метка с id=${markerData.id} успешно удалена")
+            } ?: run {
+                Log.e(
+                    "RemoveMarker",
+                    "Маркер с id=${markerData.id} не найден. Текущее состояние: ${markerDataMap.entries.map { "key=${it.key.title}, id=${it.value.id}" }}"
+                )
+            }
+        }
+    }
+
+
 
 
     private val markerList = mutableListOf<Marker>()  // Список для сохранения маркеров
@@ -735,6 +734,11 @@ WebSocketCallback {
 
 
     private fun showMarkerDialog(marker: MarkerData) {
+        var DBViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
+
 
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_view_marker, null)
         val marker_image  = dialogView.findViewById<ImageView>(R.id.marker_image)
@@ -771,6 +775,7 @@ WebSocketCallback {
         // Обработка нажатия кнопки "Готово"
         marker_button_ready.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
+                DBViewModel.addMarkers(convertMarkerDataListToMarkerList(listOf(marker)))
                 Became_Participant_fun(uid_main, key.toString(), marker.id)
             }
             dialog.dismiss()
@@ -789,8 +794,18 @@ WebSocketCallback {
         showAddMarkerDialog(latLng, this, uid_main, this, DBViewModel)
     }
 
+
+
     private fun addMarker(latLng: LatLng, markerData: MarkerData): Marker? {
         if (::mMap.isInitialized) {
+            // Проверяем, есть ли метка с таким же id
+            val existingMarker = markerDataMap.values.find { it.id == markerData.id }
+            if (existingMarker != null) {
+                Log.w("AddMarker", "Метка с id=${markerData.id} уже существует. Добавление отменено.")
+                return null
+            }
+
+            // Добавляем новую метку на карту
             val marker = mMap.addMarker(
                 MarkerOptions()
                     .position(latLng)
@@ -807,7 +822,8 @@ WebSocketCallback {
             )
 
             marker?.let {
-                markerDataMap[it] = markerData // Сохраняем маркер как ключ, а данные маркера как значение
+                // Сохраняем маркер и данные маркера в MapMarkerManager
+                markerDataMap[it] = markerData
                 Log.d("AddMarker", "Метка добавлена: id=${markerData.id}, name=${markerData.name}")
             }
 
@@ -817,6 +833,8 @@ WebSocketCallback {
             return null
         }
     }
+
+
 
     // Добавьте метод для поиска местоположения по адресу
     private fun findLocation(address: String) {
@@ -857,10 +875,6 @@ WebSocketCallback {
             Toast.makeText(this, "Map is not available", Toast.LENGTH_SHORT).show()
         }
     }
-
-
-
-
 
 
 

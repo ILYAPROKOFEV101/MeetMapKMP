@@ -61,7 +61,7 @@ class MarkerAdapter(
                     val removedMarker = markerList[position]
                     markerList.removeAt(position)
                     notifyItemRemoved(position)
-                    removemareker.removeSpecificMarker(removedMarker)  // Это будет выполнено в главном потоке
+
                     // Выполнение запроса на сервер и удаление в базе данных
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
@@ -74,7 +74,7 @@ class MarkerAdapter(
                             // Удаление маркера с карты
                             withContext(Dispatchers.Main) {
                                 Log.d("RemoveMarker", "Кнопка удаления нажата для маркера: ${removedMarker.name}")
-
+                                removemareker.removeSpecificMarker(removedMarker)  // Это будет выполнено в главном потоке
                             }
                         } catch (e: Exception) {
                             // Обработка ошибок
