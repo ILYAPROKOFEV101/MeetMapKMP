@@ -105,6 +105,7 @@ ktor = "2.3.12"
 settings = "1.2.0"
 dateTime = "0.6.1"
 koin = "4.0.0"
+runtimeLivedata = "1.7.6"
 
 [libraries]
 sqldelight-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
@@ -234,6 +235,7 @@ supabase-core = { group = "io.github.jan-tennert.supabase", name = "supabase-cor
 #sqlDelight
 sqldelight-driver-android = { module = "app.cash.sqldelight:android-driver", version.ref = "sqldelight" }
 sqldelight-driver-ios = { module = "app.cash.sqldelight:native-driver", version.ref = "sqldelight" }
+androidx-runtime-livedata = { group = "androidx.compose.runtime", name = "runtime-livedata", version.ref = "runtimeLivedata" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

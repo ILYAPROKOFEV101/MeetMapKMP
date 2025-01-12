@@ -632,16 +632,14 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         }
     }
     override fun removeSpecificMarker(markerData: MarkerData) {
-        CoroutineScope(Dispatchers.Main).launch {
+        Handler(Looper.getMainLooper()).post {
             Log.d("RemoveMarker", "Попытка удалить маркер с id=${markerData.id}")
             Log.d(
                 "RemoveMarker",
                 "Состояние markerDataMap до удаления: ${markerDataMap.entries.map { "key=${it.key.title}, id=${it.value.id}" }}"
             )
 
-            val markerToRemove = withContext(Dispatchers.Default) {
-                markerDataMap.entries.find { it.value.id == markerData.id }
-            }
+            val markerToRemove = markerDataMap.entries.find { it.value.id == markerData.id }
 
             markerToRemove?.let { entry ->
                 // Удаление маркера с карты
@@ -797,42 +795,42 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
 
     private fun addMarker(latLng: LatLng, markerData: MarkerData): Marker? {
-        if (::mMap.isInitialized) {
-            // Проверяем, есть ли метка с таким же id
-            val existingMarker = markerDataMap.values.find { it.id == markerData.id }
-            if (existingMarker != null) {
-                Log.w("AddMarker", "Метка с id=${markerData.id} уже существует. Добавление отменено.")
-                return null
-            }
-
-            // Добавляем новую метку на карту
-            val marker = mMap.addMarker(
-                MarkerOptions()
-                    .position(latLng)
-                    .title(markerData.name)
-                    .icon(
-                        bitmapDescriptorFromVector(
-                            this@Map_Activity,
-                            R.drawable.location_on_,
-                            "FF005B",
-                            140,
-                            140
-                        )
-                    )
-            )
-
-            marker?.let {
-                // Сохраняем маркер и данные маркера в MapMarkerManager
-                markerDataMap[it] = markerData
-                Log.d("AddMarker", "Метка добавлена: id=${markerData.id}, name=${markerData.name}")
-            }
-
-            return marker
-        } else {
+        if (!::mMap.isInitialized) {
             Log.e("MapError", "mMap не инициализирован")
             return null
         }
+
+        // Проверяем, есть ли метка с таким же id
+        if (markerDataMap.values.any { it.id == markerData.id }) {
+            Log.w("AddMarker", "Метка с id=${markerData.id} уже существует. Добавление отменено.")
+            return null
+        }
+
+        // Добавляем новую метку на карту
+        val marker = mMap.addMarker(
+            MarkerOptions()
+                .position(latLng)
+                .title(markerData.name)
+                .icon(
+                    bitmapDescriptorFromVector(
+                        this@Map_Activity,
+                        R.drawable.location_on_,
+                        "FF005B",
+                        140,
+                        140
+                    )
+                )
+        )
+
+        // Сохраняем маркер, если он успешно добавлен
+        marker?.let {
+            markerDataMap[it] = markerData
+            Log.d("AddMarker", "Метка добавлена: id=${markerData.id}, name=${markerData.name}")
+        }
+
+        return marker
     }
+
 
 
 

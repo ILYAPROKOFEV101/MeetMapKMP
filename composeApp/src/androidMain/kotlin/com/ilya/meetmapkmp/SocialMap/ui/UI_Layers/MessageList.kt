@@ -12,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,10 +39,12 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.UploadFile
@@ -58,6 +61,8 @@ import androidx.compose.runtime.Composable
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -291,6 +296,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
     var text by remember { mutableStateOf("") }
 
     val fileViewModel: FileViewModel = viewModel()
+    val fileList by fileViewModel.fileList.observeAsState(emptyList())
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
@@ -309,41 +315,63 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
         }
     )
 
-
-
-
-
-
-
-
-
-
-
-
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(60.dp)
-    ) {
-        IconButton(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Отображение выбранных файлов
+        LazyRow(
             modifier = Modifier
-                .weight(0.1f)
-                .align(Alignment.CenterVertically),
-            onClick = {
-                // Открытие галереи для выбора изображений
-                Log.d("MaterialTextFiled", "Открываем галерею для выбора изображений")
-
-                photoPickerLauncher.launch(
-                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                )
-
-            }
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Add,
-                contentDescription = "Send"
-            )
+            items(fileList) { (file, filename) ->
+                Box(modifier = Modifier.size(60.dp)) {
+                    Image(
+                        painter = rememberAsyncImagePainter(file),
+                        contentDescription = filename,
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                fileViewModel.removeFile(file) // Удаление файла
+                            }
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Удалить",
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .background(MaterialTheme.colorScheme.surface, CircleShape)
+                            .size(16.dp)
+                            .clickable {
+                                fileViewModel.removeFile(file) // Удаление файла
+                            }
+                    )
+                }
+            }
         }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(60.dp)
+        ) {
+            IconButton(
+                modifier = Modifier
+                    .weight(0.1f)
+                    .align(Alignment.CenterVertically),
+                onClick = {
+                    // Открытие галереи для выбора изображений
+                    Log.d("MaterialTextField", "Открываем галерею для выбора изображений")
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add"
+                )
+            }
 
         TextField(
             value = text,
@@ -436,6 +464,8 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
         }
     }
 }
+    }
+
 
 
 // Функция для проверки, является ли файл видео

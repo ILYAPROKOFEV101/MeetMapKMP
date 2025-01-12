@@ -237,6 +237,7 @@ android {
 
 dependencies {
     implementation(libs.firebase.auth)
+    implementation(libs.androidx.runtime.livedata)
     debugImplementation(compose.uiTooling)
 }
 
