@@ -659,8 +659,6 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     }
 
 
-
-
     private val markerList = mutableListOf<Marker>()  // Список для сохранения маркеров
 
     private fun addRouteToMap(routePoints: List<LatLng>, circleSpacing: Int): Polyline {
