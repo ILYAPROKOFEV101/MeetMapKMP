@@ -29,6 +29,7 @@ import com.ilya.codewithfriends.presentation.profile.IMG
 import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
+import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModelFactory
 import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.MessageList
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 
@@ -36,7 +37,7 @@ import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 class Chat_with_Friends_fragment : Fragment() {
 
     private val chatViewModel: ChatViewModel by lazy {
-        ViewModelProvider(this).get(ChatViewModel::class.java)
+        ViewModelProvider(this, ChatViewModelFactory(requireContext())).get(ChatViewModel::class.java)
     }
 
     private val friendsViewModel: FriendsViewModel by viewModels()
@@ -88,8 +89,6 @@ class Chat_with_Friends_fragment : Fragment() {
         super.onStart()
         // Запуск сервиса для WebSocket
 
-
-
             requireContext().startService(
                 Intent(
                     requireContext(),
@@ -98,8 +97,7 @@ class Chat_with_Friends_fragment : Fragment() {
             )
 
 
-
-        var token  =   MyDataProvider(this.requireContext()).getToken() // Retrieve the token
+        var token = MyDataProvider(this.requireContext()).getToken() // Retrieve the token
         Log.d("Save_token", "получаю токен: ${token.toString()}")
         val uid = ID(userData = googleAuthUiClient.getSignedInUser())
         val name = UID(userData = googleAuthUiClient.getSignedInUser())

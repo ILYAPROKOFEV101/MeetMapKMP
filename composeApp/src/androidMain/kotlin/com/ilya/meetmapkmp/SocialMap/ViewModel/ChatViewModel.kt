@@ -1,7 +1,11 @@
 package com.ilya.meetmapkmp.SocialMap.ViewModel
 
 
+import android.app.Application
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
 import com.ilya.meetmapkmp.SocialMap.DataModel.DeleteMessage
@@ -9,6 +13,8 @@ import com.ilya.meetmapkmp.SocialMap.DataModel.DeleteMessageContent
 
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messageformat
 import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+import com.ilya.platform.DriverFactory
+import com.ilya.platform.di.ChatQueriesImpl
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,8 +23,16 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-// ViewModel контролирующая чат, а также соединение с ним получение собщений
-class ChatViewModel : ViewModel() {
+class ChatViewModel(context: Application) : ViewModel() {
+
+    private val driverFactory = DriverFactory(context)
+    private val database = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("bucket.db"), null)
+    private val chatQueries = ChatQueriesImpl(database)
+
+    val tableName = "chat_room_1"
+    init {
+        driverFactory.createMessageTable(tableName)
+    }
 
     private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
     private val _deletemessages = MutableStateFlow<List<DeleteMessage>>(emptyList())
@@ -26,45 +40,79 @@ class ChatViewModel : ViewModel() {
     val messages: StateFlow<List<Messages_Chat>> get() = _messages
     val deletemessages: StateFlow<List<DeleteMessage>> get() = _deletemessages
 
-
-
     private val chatService = ChatWebSocketService()
-
-
-
+    // Подключение к чату
     fun connectToChat(roomId: String, uid: String, key: String, name: String) {
-        chatService.connectToWebSocket("wss://meetmap.up.railway.app/chat/$roomId?username=Ilya&uid=$uid&key=$key")
+        chatService.connectToWebSocket("wss://meetmap.up.railway.app/chat/$roomId?username=$name&uid=$uid&key=$key")
 
         viewModelScope.launch {
             chatService.messages.collect { newMessages ->
-                _messages.value = newMessages
+                _messages.emit(newMessages)
+            }
+        }
+
+        viewModelScope.launch {
+            chatService.deletemessages.collect { deletedMessages ->
+                _deletemessages.emit(deletedMessages)
+            }
+        }
+
+
+        viewModelScope.launch {
+            chatService.deletemessages.collect { deletedMessages ->
+                // Удаляем сообщения из базы данных
+                deletedMessages.forEach { deletedMessage ->
+                    chatQueries.deleteMessageById(roomId, deletedMessage.delete_mesage!![0])
+                }
+
+                // Обновляем StateFlow из базы данных
+                val allMessages = chatQueries.getAllMessages(roomId)
+                _messages.emit(allMessages)
             }
         }
     }
 
+    // Обработка удаления сообщений
+    suspend fun handleDeleteMessages(deleteMessages: List<String>) {
+        // Фильтруем список сообщений, удаляя те, которые присутствуют в списке удалённых сообщений
+        val updatedMessages = _messages.value.filterNot { it.key in deleteMessages }
+        _messages.emit(updatedMessages)
+    }
 
+    // Отправка нового сообщения
     fun sendMessage(content: String, imageUrls: List<String>, videoUrls: List<String>, gifUrls: List<String>, fileUrls: List<String>) {
-        val message = Messageformat(content, gifUrls, imageUrls, videoUrls,  fileUrls)
+        val message = Messageformat(content, gifUrls, imageUrls, videoUrls, fileUrls)
 
-        // Сериализуем объект Messageformat в строку JSON
+        // Сериализация объекта Messageformat в строку JSON
         val jsonMessage = Json.encodeToString(message)
 
         // Отправка через WebSocket
         chatService.sendMessage(jsonMessage)
     }
 
-    fun sendDeleteMessage(deleteMessages : List<String>) {
+    // Отправка сообщений для удаления
+    fun sendDeleteMessage(deleteMessages: List<String>) {
         val message = DeleteMessageContent(deleteMessages)
-        // Сериализуем объект Messageformat в строку JSON
+        // Сериализация объекта DeleteMessageContent в строку JSON
         val jsonMessage = Json.encodeToString(message)
 
         // Отправка через WebSocket
         chatService.sendMessage(jsonMessage)
-
     }
 
+
+    // Отключение от чата
     fun disconnectFromChat() {
         chatService.disconnect()
     }
 }
 
+
+class ChatViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ChatViewModel::class.java)) {
+            return ChatViewModel(context.applicationContext as Application) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
+    }
+}
