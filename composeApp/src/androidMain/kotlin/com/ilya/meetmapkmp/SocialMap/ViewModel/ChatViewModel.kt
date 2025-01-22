@@ -29,10 +29,7 @@ class ChatViewModel(context: Application) : ViewModel() {
     private val database = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("bucket.db"), null)
     private val chatQueries = ChatQueriesImpl(database)
 
-    val tableName = "chat_room_1"
-    init {
-        driverFactory.createMessageTable(tableName)
-    }
+
 
     private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
     private val _deletemessages = MutableStateFlow<List<DeleteMessage>>(emptyList())
@@ -46,6 +43,10 @@ class ChatViewModel(context: Application) : ViewModel() {
         chatService.connectToWebSocket("wss://meetmap.up.railway.app/chat/$roomId?username=$name&uid=$uid&key=$key")
 
         viewModelScope.launch {
+            val tableName = "chat_$roomId"
+            driverFactory.createMessageTable(tableName)
+        }
+        viewModelScope.launch {
             chatService.messages.collect { newMessages ->
                 _messages.emit(newMessages)
             }
@@ -56,6 +57,8 @@ class ChatViewModel(context: Application) : ViewModel() {
                 _deletemessages.emit(deletedMessages)
             }
         }
+
+
 
 
         viewModelScope.launch {
