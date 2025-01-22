@@ -47,11 +47,23 @@ class ChatViewModel(context: Application) : ViewModel() {
             val tableName = "chat_$roomId"
             driverFactory.createMessageTable(tableName)
         }
+
         viewModelScope.launch {
             chatService.messages.collect { newMessages ->
-                _messages.emit(newMessages)
+                //  новые сообщения в базу данных
+                newMessages.forEach { message ->
+                    chatQueries.insertMessage(roomId, message)
+                }
+
+                // все сообщения из базы данных
+                val allMessages = chatQueries.getAllMessages(roomId)
+
+                // О StateFlow с данными из базы
+                _messages.emit(allMessages)
             }
         }
+
+
 
         viewModelScope.launch {
             chatService.deletemessages.collect { deletedMessages ->
