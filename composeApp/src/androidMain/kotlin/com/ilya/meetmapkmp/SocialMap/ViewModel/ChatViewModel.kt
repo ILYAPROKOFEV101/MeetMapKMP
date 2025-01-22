@@ -4,6 +4,7 @@ package com.ilya.meetmapkmp.SocialMap.ViewModel
 import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -63,16 +64,20 @@ class ChatViewModel(context: Application) : ViewModel() {
 
         viewModelScope.launch {
             chatService.deletemessages.collect { deletedMessages ->
-                // Удаляем сообщения из базы данных
                 deletedMessages.forEach { deletedMessage ->
-                    chatQueries.deleteMessageById(roomId, deletedMessage.delete_mesage!![0])
+                    deletedMessage.delete_mesage?.firstOrNull()?.let { messageId ->
+                        chatQueries.deleteMessageById(roomId, messageId)
+                    }
                 }
 
-                // Обновляем StateFlow из базы данных
                 val allMessages = chatQueries.getAllMessages(roomId)
+                if (allMessages.isEmpty()) {
+                    Log.w("с", "Сообщений в базе данных нет")
+                }
                 _messages.emit(allMessages)
             }
         }
+
     }
 
     // Обработка удаления сообщений

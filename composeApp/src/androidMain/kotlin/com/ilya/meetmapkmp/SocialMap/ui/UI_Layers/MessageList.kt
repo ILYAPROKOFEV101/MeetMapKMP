@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -74,6 +75,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -292,6 +294,17 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Material_text_filed(chatViewModel: ChatViewModel) {
+    val customFontFamily = FontFamily(
+        Font(R.font.open_sans_semi_condensed_regular, FontWeight.Normal)
+    )
+    val messages by chatViewModel.messages.collectAsState()
+    val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
+    val Notmy_message_color = if (isSystemInDarkTheme()) Color(0xFFFFFFFF) else Color(0xFF2315FF3)
+    val background_color = if (isSystemInDarkTheme()) Color(0xFF191C20) else Color(0xFFFFFFFF)
+    val backgroundColor = if (isSystemInDarkTheme()) Color(0xFF191C20) else Color(0xFFFFFFFF)
+    val cursorColor = if (isSystemInDarkTheme()) Color(0xFF191C20) else Color(0xFFFFFFFF)
+    val textColor = if (isSystemInDarkTheme())  Color(0xFFFFFFFF) else  Color(0xFF191C20)
+
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
 
@@ -353,7 +366,7 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .height(60.dp)
+                .height(IntrinsicSize.Min)  // Позволяет Row увеличиваться по высоте
         ) {
             IconButton(
                 modifier = Modifier
@@ -373,23 +386,31 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
                 )
             }
 
-        TextField(
-            value = text,
-            onValueChange = { text = it },
-            modifier = Modifier
-                .weight(0.7f)
-                .height(80.dp),
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier
+                    .weight(0.7f)
+                    .fillMaxWidth()  // Позволяет TextField расширяться по ширине
+                    .wrapContentHeight(),  // Динамически увеличивает высоту по мере ввода текста
+                textStyle = TextStyle(
+                    fontFamily = customFontFamily,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = backgroundColor,    // Цвет фона
+                    unfocusedContainerColor = backgroundColor,  // Цвет фона
+                    focusedIndicatorColor = Color.Transparent,  // Прозрачный индикатор
+                    unfocusedIndicatorColor = Color.Transparent, // Прозрачный индикатор
+                    cursorColor = cursorColor,                  // Цвет курсора
+                    focusedTextColor = textColor,               // Цвет текста при фокусе
+                    unfocusedTextColor = textColor              // Цвет текста без фокуса
+                ),
+                maxLines = Int.MAX_VALUE,  // Убираем ограничение на количество строк
+                minLines = 1  // Можно задать минимальное количество строк
+            )
 
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedIndicatorColor = MaterialTheme.colorScheme.surface,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
-                cursorColor = MaterialTheme.colorScheme.onSurface,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface
-            ),
-            maxLines = 10
-        )
         IconButton(
             modifier = Modifier
                 .weight(0.1f)
