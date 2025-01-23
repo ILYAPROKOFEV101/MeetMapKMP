@@ -172,10 +172,7 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
     var click by remember { mutableStateOf(false) }
     var checked by remember { mutableStateOf(true) }
     val my_massege = if (isSystemInDarkTheme()) Color(0xFFFFFFFF)
-    else  Color(0xFF1B1B1B)
-    val notmy_massege = if (isSystemInDarkTheme()) Color(0xFF1B1B1B) else  Color(0xFFFFFFFF)
-
-
+    else Color(0xFF303133)
 
 
     // Определил шрифт для сообщений
@@ -242,9 +239,8 @@ Row(modifier = Modifier)
                         fontSize = 18.sp,
                         fontFamily = font,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isMyMessage) my_massege
-                        else Color(
-                            0xFFFFFFFF
+                        color = if (isMyMessage) Color(0xFFFFFFFF) else Color(
+                            0xFF1B1B1B
                         ),
                         overflow = TextOverflow.Ellipsis
                     )
