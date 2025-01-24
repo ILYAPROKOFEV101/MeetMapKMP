@@ -2,6 +2,7 @@ package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
 import android.content.ContentResolver
 import android.content.Context
+import android.media.Image
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -77,6 +78,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -88,6 +90,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
+import coil.size.Precision
 
 import com.ilya.meetmapkmp.R
 import com.ilya.Supabase.androidLog
@@ -315,9 +319,86 @@ Row(modifier = Modifier)
     }
 
 
-@Composable
-fun Upbar(modifier: Modifier){
 
+@Composable
+fun Upbar(Img_url: String, name: String , lasttime: String,) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(Color(0xFF315FF3))
+    )
+    {
+        Box(modifier = Modifier
+            .weight(0.1f)
+            )
+        {
+            Icon(
+                painter = painterResource(id = R.drawable.arrow_back_24px),
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(40.dp)
+                    .clickable {
+
+
+                    }
+
+            )
+        }
+        Spacer(modifier = Modifier.fillMaxWidth(0.1f))
+        // отоброжен аватар
+        Box(
+            modifier = Modifier
+                .weight(0.3f)
+                .fillMaxHeight()
+        ) {
+            Image(
+                painter = rememberImagePainter(
+                    data = Img_url,
+                    builder = {
+                        precision(Precision.EXACT)
+                        // Добавьте другие параметры запроса по мере необходимости
+                    }
+                ),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.fillMaxWidth(0.1f))
+
+        // имя и последнее время посещения
+        Column(
+            modifier = Modifier
+                .weight(0.5f)
+                .fillMaxHeight()){
+            Text(
+                text = name,
+                textAlign = TextAlign.Start,
+                fontSize = 20.sp,
+                fontFamily = FontFamily(Font(R.font.open_sans_semi_condensed_regular)),
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+            )
+            Text(
+                text = lasttime,
+                textAlign = TextAlign.Start,
+                fontSize = 14.sp,
+                fontFamily = FontFamily(Font(R.font.open_sans_semi_condensed_regular)),
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+            )
+        }
+
+
+    }
 }
 
 
