@@ -242,7 +242,7 @@ Row(modifier = Modifier)
                         fontSize = 18.sp,
                         fontFamily = font,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isMyMessage) my_massege
+                        color = if (!isMyMessage) my_massege
                         else Color(
                             0xFFFFFFFF
                         ),
@@ -315,6 +315,10 @@ Row(modifier = Modifier)
     }
 
 
+@Composable
+fun Upbar(modifier: Modifier){
+
+}
 
 
 

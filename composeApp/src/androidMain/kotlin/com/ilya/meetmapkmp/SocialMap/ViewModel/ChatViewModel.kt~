@@ -68,9 +68,6 @@ class ChatViewModel(context: Application) : ViewModel() {
         viewModelScope.launch {
             chatService.deletemessages.collect { deletedMessages ->
                 _deletemessages.emit(deletedMessages)
-                deletedMessages.forEach { deletedMessages ->
-                    chatQueries.deleteMessageById(roomId,deletedMessages.delete_mesage?.firstOrNull() ?: "")
-                }
             }
         }
 
