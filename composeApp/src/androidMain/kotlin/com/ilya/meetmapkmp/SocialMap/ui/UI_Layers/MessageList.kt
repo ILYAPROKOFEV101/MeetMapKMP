@@ -47,7 +47,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.UploadFile
@@ -89,6 +91,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
 import coil.size.Precision
@@ -116,7 +119,7 @@ import java.util.UUID
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: String, my_key: String) {
+fun MessageList(navController: NavController, chatViewModel: ChatViewModel, username: String, my_avatar: String, my_key: String) {
 
     val messages by chatViewModel.messages.collectAsState()
     val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
@@ -153,7 +156,7 @@ fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: Strin
         ) {
             items(messages) { message ->
                 Spacer(modifier = Modifier.height(10.dp))
-                MessageCard(message, my_key, painter, username)
+                MessageCard(navController , chatViewModel, message, my_key, painter, username)
             }
         }
         Spacer(modifier = Modifier.height(10.dp))  // Пробел перед текстовым полем
@@ -165,7 +168,7 @@ fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: Strin
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, username: String) {
+fun MessageCard(navController: NavController ,chatViewModel: ChatViewModel, message: Messages_Chat, my_key: String, my_avatar: Painter, username: String) {
     val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
     val Notmy_message_color = if (isSystemInDarkTheme()) Color(0xFFFFFFFF)
     else Color(0xFF303133)
@@ -188,7 +191,24 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
     )
     Column(
         modifier = Modifier
-            .clickable { click = !click } // Изменяем состояние при клике
+            .clickable { click = !click // Переключаем состояние при клике
+                if (click) {
+                    // Добавляем сообщение в список
+                    if( chatViewModel.getSendToServer() != null){
+                        navController.navigate("delete"){
+                            launchSingleTop = true // Этот флаг предотвращает создание нескольких экранов
+                        }
+                    } else {
+                        navController.navigate("Friend"){
+                            launchSingleTop = true // Этот флаг предотвращает создание нескольких экранов
+                        }
+                    }
+                    chatViewModel.addToSendToServer(message.messageId.toString())
+                } else {
+                    // Удаляем сообщение из списка
+                    chatViewModel.removeFromSendToServer(message.messageId.toString())
+                }
+            } // Изменяем состояние при клике
             .background(
                 if (click) Color(0x002A2A2A).copy(alpha = 0.1f) // Синий прозрачный цвет
                 else Color.Transparent // Прозрачный цвет по умолчанию
@@ -320,6 +340,8 @@ Row(modifier = Modifier)
 
 
 
+
+
 @Composable
 fun Upbar(Img_url: String, name: String , lasttime: String,) {
     Row(
@@ -329,7 +351,8 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
             .background(Color(0xFF315FF3))
     )
     {
-        Box(modifier = Modifier
+        Box(
+            modifier = Modifier
             .weight(0.1f)
             )
         {
@@ -348,7 +371,7 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
             )
         }
         Spacer(modifier = Modifier.fillMaxWidth(0.1f))
-        // отоброжен аватар
+
         Box(
             modifier = Modifier
                 .weight(0.3f)
@@ -359,7 +382,6 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
                     data = Img_url,
                     builder = {
                         precision(Precision.EXACT)
-                        // Добавьте другие параметры запроса по мере необходимости
                     }
                 ),
                 contentDescription = "Logo",
@@ -396,8 +418,42 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
                     .padding(start = 10.dp)
             )
         }
+    }
+}
 
-
+@Composable
+fun DeleteMessage(navController: NavController, chatViewModel: ChatViewModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(Color(0xFF315FF3)),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = {
+                // Действие для кнопки "Назад"
+                 navController.popBackStack()
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Назад",
+                tint = Color.White
+            )
+        }
+        IconButton(
+            onClick = {
+               chatViewModel.sendDeleteMessage(chatViewModel.getSendToServer())
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Удалить сообщение",
+                tint = Color.White
+            )
+        }
     }
 }
 

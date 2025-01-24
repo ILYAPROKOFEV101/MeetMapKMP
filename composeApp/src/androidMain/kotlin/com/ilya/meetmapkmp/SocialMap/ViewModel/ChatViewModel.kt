@@ -8,6 +8,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
 import com.ilya.meetmapkmp.SocialMap.DataModel.DeleteMessage
 import com.ilya.meetmapkmp.SocialMap.DataModel.DeleteMessageContent
@@ -30,13 +31,61 @@ class ChatViewModel(context: Application) : ViewModel() {
     private val database = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("bucket.db"), null)
     private val chatQueries = ChatQueriesImpl(database)
 
-
-
     private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
     private val _deletemessages = MutableStateFlow<List<DeleteMessage>>(emptyList())
 
     val messages: StateFlow<List<Messages_Chat>> get() = _messages
     val deletemessages: StateFlow<List<DeleteMessage>> get() = _deletemessages
+    private val _sendToServer = MutableStateFlow<List<String>>(emptyList())
+    val sendToServer: StateFlow<List<String>> get() = _sendToServer
+    private var navController: NavController? = null
+
+
+    // Установка NavController
+    fun setNavController(controller: NavController) {
+        navController = controller
+    }
+
+    // Навигация на определённый экран
+    fun navigateTo(route: String) {
+        navController?.navigate(route) {
+            launchSingleTop = true // Не создавать дубли экрана
+        }
+    }
+    // Возврат назад
+    fun navigateBack() {
+        navController?.popBackStack()
+    }
+
+    // Добавление строки в список sendToServer
+    fun addToSendToServer(message: String) {
+        viewModelScope.launch {
+            val updatedList = _sendToServer.value + message
+            _sendToServer.emit(updatedList)
+        }
+    }
+
+    // Удаление строки из списка sendToServer
+    fun removeFromSendToServer(message: String) {
+        viewModelScope.launch {
+            val updatedList = _sendToServer.value.filterNot { it == message }
+            _sendToServer.emit(updatedList)
+        }
+    }
+
+
+    // Очистка списка sendToServer
+    fun clearSendToServer() {
+        viewModelScope.launch {
+            _sendToServer.emit(emptyList())
+        }
+    }
+
+    // Получение текущего списка sendToServer
+    fun getSendToServer(): List<String> {
+        return _sendToServer.value
+    }
+
 
     private val chatService = ChatWebSocketService()
     // Подключение к чату
@@ -73,8 +122,6 @@ class ChatViewModel(context: Application) : ViewModel() {
                 }
             }
         }
-
-
 
 
         viewModelScope.launch {
