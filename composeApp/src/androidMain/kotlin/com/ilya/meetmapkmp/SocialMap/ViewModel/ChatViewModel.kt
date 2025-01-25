@@ -62,8 +62,13 @@ class ChatViewModel(context: Application) : ViewModel() {
         viewModelScope.launch {
             val updatedList = _sendToServer.value + message
             _sendToServer.emit(updatedList)
+
+            // Логирование добавленного сообщения и всего обновленного списка
+            Log.d("ChatViewModel", "Добавлено сообщение: $message")
+            Log.d("ChatViewModel", "Текущий список sendToServer: $updatedList")
         }
     }
+
 
     // Удаление строки из списка sendToServer
     fun removeFromSendToServer(message: String) {
@@ -72,6 +77,15 @@ class ChatViewModel(context: Application) : ViewModel() {
             _sendToServer.emit(updatedList)
         }
     }
+
+
+    fun delete_from_local_db(chatId: String, messageIds: List<String>) {
+        messageIds.forEach { messageId ->
+            chatQueries.deleteMessageById(chatId, messageId)
+            Log.d("ChatViewModel", "Удалено сообщение с ID: $messageId из чата: $chatId")
+        }
+    }
+
 
 
     // Очистка списка sendToServer
@@ -117,8 +131,14 @@ class ChatViewModel(context: Application) : ViewModel() {
         viewModelScope.launch {
             chatService.deletemessages.collect { deletedMessages ->
                 _deletemessages.emit(deletedMessages)
-                deletedMessages.forEach { deletedMessages ->
-                    chatQueries.deleteMessageById(roomId,deletedMessages.delete_mesage?.firstOrNull() ?: "")
+
+                // Проверяем, если список сообщений для удаления не пуст
+                deletedMessages.forEach { messageBatch ->
+                    messageBatch.delete_mesage?.forEach { messageId ->
+                        Log.d("ChatViewModel", "Deleting message with ID: $messageId")
+                        // Удаляем сообщение по ID
+                        chatQueries.deleteMessageById(roomId, messageId)
+                    }
                 }
             }
         }
@@ -168,6 +188,7 @@ class ChatViewModel(context: Application) : ViewModel() {
 
         // Отправка через WebSocket
         chatService.sendMessage(jsonMessage)
+        clearSendToServer()
     }
 
 
