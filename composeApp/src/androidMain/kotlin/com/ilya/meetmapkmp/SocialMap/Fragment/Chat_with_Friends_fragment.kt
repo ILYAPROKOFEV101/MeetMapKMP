@@ -92,7 +92,7 @@ class Chat_with_Friends_fragment : Fragment() {
                                 }
                                 composable("delete")
                                 {
-                                    DeleteMessage(navController, chatViewModel)
+                                    DeleteMessage("TfyaiP2CJGk879b" , navController, chatViewModel)
                                 }
                             }
 

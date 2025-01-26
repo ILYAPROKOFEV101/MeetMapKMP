@@ -422,7 +422,7 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
 }
 
 @Composable
-fun DeleteMessage(navController: NavController, chatViewModel: ChatViewModel) {
+fun DeleteMessage(rooid: String, navController: NavController, chatViewModel: ChatViewModel) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -445,7 +445,9 @@ fun DeleteMessage(navController: NavController, chatViewModel: ChatViewModel) {
         }
         IconButton(
             onClick = {
+                chatViewModel.delete_from_local_db(rooid, chatViewModel.getSendToServer())
                chatViewModel.sendDeleteMessage(chatViewModel.getSendToServer())
+
             }
         ) {
             Icon(

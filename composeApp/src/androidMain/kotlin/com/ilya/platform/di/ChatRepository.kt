@@ -71,17 +71,17 @@ class ChatQueriesImpl(private val database: SQLiteDatabase) {
         return messages
     }
 
-    // Удаление сообщения по ID
     fun deleteMessageById(chatId: String, messageId: String) {
         val query = "DELETE FROM chat_$chatId WHERE message_id = ?"
-        Log.d(TAG, "Удаление сообщения с ID $messageId из chat_$chatId")
+        Log.d("ChatViewModel", "Удаление сообщения с ID $messageId из таблицы chat_$chatId")
         try {
             database.execSQL(query, arrayOf(messageId))
-            Log.d(TAG, "Сообщение с ID $messageId удалено из chat_$chatId")
+            Log.d("ChatViewModel", "Сообщение с ID $messageId успешно удалено из chat_$chatId")
         } catch (e: Exception) {
-            Log.e(TAG, "Ошибка удаления сообщения с ID $messageId из chat_$chatId: ${e.message}")
+            Log.e("ChatViewModel", "Ошибка удаления сообщения с ID $messageId из chat_$chatId: ${e.message}")
         }
     }
+
 
     // Удаление всех сообщений в чате
     fun deleteAllMessages(chatId: String) {

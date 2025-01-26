@@ -39,7 +39,6 @@ class ChatViewModel(context: Application) : ViewModel() {
     private val _sendToServer = MutableStateFlow<List<String>>(emptyList())
     val sendToServer: StateFlow<List<String>> get() = _sendToServer
     private var navController: NavController? = null
-        var roomId_global = ""
 
 
     // Установка NavController
@@ -92,7 +91,7 @@ class ChatViewModel(context: Application) : ViewModel() {
     // Подключение к чату
     fun connectToChat(roomId: String, uid: String, key: String, name: String) {
         chatService.connectToWebSocket("wss://meetmap.up.railway.app/chat/$roomId?username=$name&uid=$uid&key=$key")
-        roomId_global = roomId
+
         viewModelScope.launch {
             val tableName = "chat_$roomId"
             driverFactory.createMessageTable(tableName)
@@ -169,8 +168,6 @@ class ChatViewModel(context: Application) : ViewModel() {
 
         // Отправка через WebSocket
         chatService.sendMessage(jsonMessage)
-        Log.d("ChatViewModel", "Отправка сообщения для удаления: $jsonMessage")
-        chatQueries.deleteMessageById(roomId_global,deleteMessages.firstOrNull() ?: "")
     }
 
 
