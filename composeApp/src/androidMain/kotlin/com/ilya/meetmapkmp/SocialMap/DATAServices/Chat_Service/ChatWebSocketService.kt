@@ -23,7 +23,6 @@ import okio.ByteString
 import java.util.concurrent.TimeUnit
 
 class ChatWebSocketService : Service() {
-
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val _messages = MutableStateFlow<List<Messages_Chat>>(emptyList())
     val messages: StateFlow<List<Messages_Chat>> = _messages
@@ -34,8 +33,8 @@ class ChatWebSocketService : Service() {
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS) // Неограниченное время ожидания сообщений
         .build()
-    private var webSocket: WebSocket? = null
 
+    private var webSocket: WebSocket? = null
     private val TAG = "ChatWebSocketService"
 
     fun connectToWebSocket(url: String) {
@@ -86,25 +85,32 @@ class ChatWebSocketService : Service() {
         override fun onMessage(webSocket: WebSocket, text: String) {
             Log.d(TAG, "Received message: $text")
             val parsedMessage = parseMessage(text)
-
             coroutineScope.launch {
                 when (parsedMessage) {
                     is Messages_Chat -> {
                         // Добавление нового сообщения в список
-                        val updatedMessages = _messages.value + parsedMessage
+                        val updatedMessages = _messages.value.toMutableList().apply {
+                            add(parsedMessage)
+                        }
                         _messages.emit(updatedMessages)
                     }
                     is DeleteMessage -> {
+                        // Удаление сообщения из списка
+                        val updatedMessages = _messages.value.filterNot { msg ->
+                            parsedMessage.delete_mesage?.contains(msg.messageId) == true
+                        }
+                        _messages.emit(updatedMessages)
+
                         // Добавление удалённого сообщения
-                        val updatedDeletedMessages = _deletemessages.value + parsedMessage
+                        val updatedDeletedMessages = _deletemessages.value.toMutableList().apply {
+                            add(parsedMessage)
+                        }
                         _deletemessages.emit(updatedDeletedMessages)
                     }
                     else -> Log.w(TAG, "Unknown message type received")
                 }
             }
         }
-
-
 
         override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
             Log.d(TAG, "Received binary message: ${bytes.hex()}")
@@ -125,16 +131,14 @@ class ChatWebSocketService : Service() {
     }
 
     private fun parseMessage(json: String): Any? {
-         val jsonParser = Json {
+        val jsonParser = Json {
             ignoreUnknownKeys = true // Игнорировать неизвестные ключи
         }
-
         return try {
-            val jsonElement = jsonParser.parseToJsonElement(json) // Используем jsonParser
+            val jsonElement = jsonParser.parseToJsonElement(json)
             val jsonObject = jsonElement.jsonObject
-
             when {
-                "delete_mesage" in jsonObject -> jsonParser.decodeFromJsonElement<DeleteMessage>(jsonElement)
+                "delete_message" in jsonObject -> jsonParser.decodeFromJsonElement<DeleteMessage>(jsonElement)
                 "messageTime" in jsonObject -> jsonParser.decodeFromJsonElement<Messages_Chat>(jsonElement)
                 else -> null
             }
@@ -144,8 +148,20 @@ class ChatWebSocketService : Service() {
         }
     }
 
+    // Метод для очистки всех сообщений
+    fun clearMessages() {
+        coroutineScope.launch {
+            _messages.emit(emptyList())
+        }
+    }
 
-
-
+    // Метод для удаления сообщений по ID
+    fun deleteMessagesByIds(messageIds: List<String>) {
+        coroutineScope.launch {
+            val updatedMessages = _messages.value.filterNot { msg ->
+                messageIds.contains(msg.messageId)
+            }
+            _messages.emit(updatedMessages)
+        }
+    }
 }
-

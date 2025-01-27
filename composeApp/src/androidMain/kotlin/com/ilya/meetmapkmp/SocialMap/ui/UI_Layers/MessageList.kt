@@ -70,6 +70,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -191,7 +192,8 @@ fun MessageCard(navController: NavController ,chatViewModel: ChatViewModel, mess
     )
     Column(
         modifier = Modifier
-            .clickable { click = !click // Переключаем состояние при клике
+            .clickable {
+                click = !click // Переключаем состояние при клике
                 if (click) {
                     // Добавляем сообщение в список
                     if( chatViewModel.getSendToServer() != null){
@@ -339,9 +341,6 @@ Row(modifier = Modifier)
     }
 
 
-
-
-
 @Composable
 fun Upbar(Img_url: String, name: String , lasttime: String,) {
     Row(
@@ -423,6 +422,7 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
 
 @Composable
 fun DeleteMessage(rooid: String, navController: NavController, chatViewModel: ChatViewModel) {
+    val coroutineScope = rememberCoroutineScope()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -445,9 +445,18 @@ fun DeleteMessage(rooid: String, navController: NavController, chatViewModel: Ch
         }
         IconButton(
             onClick = {
-                chatViewModel.delete_from_local_db(rooid, chatViewModel.getSendToServer())
-               chatViewModel.sendDeleteMessage(chatViewModel.getSendToServer())
+                coroutineScope.launch {
+                    val messagesToSend = chatViewModel.getSendToServer()
 
+                    // Удаление сообщений из локальной базы данных и отправка на сервер
+                    messagesToSend.forEach { message ->
+                        chatViewModel.delete_from_local_db(rooid, listOf(message))
+
+                    }
+
+                    // Отправка сообщений на сервер
+                    chatViewModel.sendDeleteMessage(chatViewModel.getSendToServer())
+                }
             }
         ) {
             Icon(

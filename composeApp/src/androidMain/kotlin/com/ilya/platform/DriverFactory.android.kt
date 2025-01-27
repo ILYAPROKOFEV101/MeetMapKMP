@@ -7,6 +7,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.ilya.Database
+
 actual class DriverFactory(private val context: Context) {
 
     actual fun createDriver(): SqlDriver {
@@ -46,5 +47,6 @@ actual class DriverFactory(private val context: Context) {
             false
         }
     }
+
 }
 

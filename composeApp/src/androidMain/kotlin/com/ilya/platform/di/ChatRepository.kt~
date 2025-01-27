@@ -77,7 +77,7 @@ class ChatQueriesImpl(private val database: SQLiteDatabase) {
         withContext(Dispatchers.IO) {
             try {
                 // Логируем начало операции удаления
-                Log.i("ChatQueriesDB", "Начинается проверка наличия сообщения с ID $messageId в таблице chat_$chatId")
+                Log.i("ChatQueries", "Начинается проверка наличия сообщения с ID $messageId в таблице chat_$chatId")
 
                 val checkQuery = "SELECT * FROM chat_$chatId WHERE message_id = ?"
                 val cursor = database.rawQuery(checkQuery, arrayOf(messageId))
@@ -85,15 +85,15 @@ class ChatQueriesImpl(private val database: SQLiteDatabase) {
 
                 // Логируем результат проверки наличия записи
                 if (recordExists) {
-                    Log.i("ChatQueriesDB", "Запись с ID $messageId найдена в таблице chat_$chatId")
+                    Log.i("ChatQueries", "Запись с ID $messageId найдена в таблице chat_$chatId")
                 } else {
-                    Log.e("ChatQueriesDB", "Запись с ID $messageId не найдена в таблице chat_$chatId")
+                    Log.e("ChatQueries", "Запись с ID $messageId не найдена в таблице chat_$chatId")
                 }
                 cursor.close()
 
                 if (recordExists) {
                     // Логируем начало транзакции для удаления записи
-                    Log.i("ChatQueriesDB", "Начинается транзакция для удаления сообщения с ID $messageId из таблицы chat_$chatId")
+                    Log.i("ChatQueries", "Начинается транзакция для удаления сообщения с ID $messageId из таблицы chat_$chatId")
 
                     database.beginTransaction()
                     try {
@@ -101,23 +101,23 @@ class ChatQueriesImpl(private val database: SQLiteDatabase) {
                         val deletedRows = database.delete("chat_$chatId", "message_id = ?", arrayOf(messageId))
 
                         if (deletedRows > 0) {
-                            Log.i("ChatQueriesDB", "Сообщение с ID $messageId успешно удалено из таблицы chat_$chatId")
+                            Log.i("ChatQueries", "Сообщение с ID $messageId успешно удалено из таблицы chat_$chatId")
                         } else {
-                            Log.e("ChatQueriesDB", "Не удалось удалить сообщение с ID $messageId из таблицы chat_$chatId")
+                            Log.e("ChatQueries", "Не удалось удалить сообщение с ID $messageId из таблицы chat_$chatId")
                         }
 
                         database.setTransactionSuccessful()
                     } finally {
                         database.endTransaction()
-                        Log.i("ChatQueriesDB", "Транзакция завершена для удаления сообщения с ID $messageId из таблицы chat_$chatId")
+                        Log.i("ChatQueries", "Транзакция завершена для удаления сообщения с ID $messageId из таблицы chat_$chatId")
                     }
                 }
             } catch (e: Exception) {
-                Log.e("ChatQueriesDB", "Ошибка при удалении сообщения с ID $messageId из таблицы chat_$chatId", e)
+                Log.e("ChatQueries", "Ошибка при удалении сообщения с ID $messageId из таблицы chat_$chatId", e)
             }
 
             // Логируем окончание операции удаления
-            Log.i("ChatQueriesDB", "Операция удаления сообщения с ID $messageId из таблицы chat_$chatId завершена")
+            Log.i("ChatQueries", "Операция удаления сообщения с ID $messageId из таблицы chat_$chatId завершена")
         }
     }
 

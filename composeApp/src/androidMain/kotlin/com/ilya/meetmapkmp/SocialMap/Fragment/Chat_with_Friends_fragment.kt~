@@ -75,7 +75,7 @@ class Chat_with_Friends_fragment : Fragment() {
                 val img = IMG(userData = googleAuthUiClient.getSignedInUser())
                 val key = getUserKey(requireContext())
 
-                var token = MyDataProvider(requireContext()).getToken() // Retrieve the token
+
 
                 SocialMap {
                     val navController = rememberNavController()
@@ -92,7 +92,7 @@ class Chat_with_Friends_fragment : Fragment() {
                                 }
                                 composable("delete")
                                 {
-                                    DeleteMessage(token.toString() , navController, chatViewModel)
+                                    DeleteMessage("TfyaiP2CJGk879b" , navController, chatViewModel)
                                 }
                             }
 
