@@ -104,6 +104,7 @@ class Chat_with_Friends_fragment : Fragment() {
                                 my_avatar = img.toString(),
                                 my_key = key.toString()
                             )
+
                         }
                     }
                 }
@@ -141,6 +142,13 @@ class Chat_with_Friends_fragment : Fragment() {
         super.onStop()
         requireContext().stopService(Intent(requireContext(), ChatWebSocketService::class.java))
         chatViewModel.disconnectFromChat()
+
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        requireContext().stopService(Intent(requireContext(), ChatWebSocketService::class.java))
+        chatViewModel.disconnectFromChat()
+        chatViewModel.onDestroy()
     }
 
 }

@@ -78,6 +78,7 @@ class ChatWebSocketService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private inner class WebSocketListenerImpl : WebSocketListener() {
+
         override fun onOpen(webSocket: WebSocket, response: Response) {
             Log.d(TAG, "WebSocket connection opened")
         }
