@@ -1,4 +1,4 @@
-package com.ilya.meetmapkmp.SocialMap.DATAServices.Find_Frinds_by_websocket
+package com.ilya.meetmapkmp.SocialMap.Interface
 
 import com.ilya.MeetingMap.SocialMap.DataModel.FindFriends
 

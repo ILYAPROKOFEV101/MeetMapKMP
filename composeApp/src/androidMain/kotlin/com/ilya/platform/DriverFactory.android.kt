@@ -48,5 +48,30 @@ actual class DriverFactory(private val context: Context) {
         }
     }
 
+
+    fun createFriendsTable(tableName: String): Boolean {
+        val db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("friends.db"), null)
+        val createTableQuery = """
+            CREATE TABLE IF NOT EXISTS $tableName (
+                message_id TEXT PRIMARY KEY,
+                content TEXT,
+                profilerIMG TEXT,
+                messageTime INTEGER,
+                key TEXT,
+                senderUsername TEXT,
+                gifUrls TEXT,
+                imageUrls TEXT,
+                videoUrls TEXT,
+                fileUrls TEXT
+            )
+        """.trimIndent()
+        return try {
+            db.execSQL(createTableQuery)
+            true
+        } catch (e: Exception) {
+            Log.e("DriverFactory", "Error creating table: $tableName", e)
+            false
+        }
+    }
 }
 
