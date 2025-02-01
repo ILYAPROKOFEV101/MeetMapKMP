@@ -161,6 +161,7 @@ kotlin {
             // sqldelight
             implementation(libs.koin.android)
             implementation(libs.sqldelight.driver.android)
+            implementation("com.jakewharton.timber:timber:5.0.1")
 
 
 

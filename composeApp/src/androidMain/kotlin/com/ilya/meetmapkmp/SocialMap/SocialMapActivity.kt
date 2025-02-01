@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.LaunchedEffect
 
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -47,6 +49,7 @@ import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 
 import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
+
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 
 
@@ -90,20 +93,25 @@ class SocialMapActivity : FragmentActivity(), WebSocketListenerCallback{
                     Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.surface)
-                     )
-                 {
-                    NavHost(navController = navController, startDestination = "Chatmenu") {
+                ) {
+                    NavHost(
+                        navController = navController,
+                        startDestination = "Chatmenu"
+                    ) {
                         composable("Friendsearch") {
                             MyFragmentContainer()
                         }
                         composable("Chatmenu") {
-                            Column(Modifier.fillMaxSize())
-                            {
-                            Loop(navController)
-                            FriendsScreen(friendsViewModel.friendsList, navController, this@SocialMapActivity)
+                            Column(Modifier.fillMaxSize()) {
+                                Loop(navController)
+                                FriendsScreen(
+                                    friendsViewModel.friendsList,
+                                    navController,
+                                    this@SocialMapActivity
+                                )
                             }
                         }
-                        composable("Chat"){
+                        composable("Chat") {
                             Chat_fragment()
                         }
                     }

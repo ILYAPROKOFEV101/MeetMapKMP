@@ -105,10 +105,12 @@ import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
 import com.ilya.meetmapkmp.SocialMap.ViewModel.FileViewModel
+
 import createTempFileFromUri
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
@@ -342,19 +344,23 @@ Row(modifier = Modifier)
 
 
 @Composable
-fun Upbar(Img_url: String, name: String , lasttime: String,) {
+fun Upbar(
+    Img_url: String,
+    name: String,
+    lasttime: String
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var isNavReady by remember { mutableStateOf(false) }
+
+
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(50.dp)
             .background(Color(0xFF315FF3))
-    )
-    {
-        Box(
-            modifier = Modifier
-            .weight(0.1f)
-            )
-        {
+    ) {
+        Box(modifier = Modifier.weight(0.1f)) {
             Icon(
                 painter = painterResource(id = R.drawable.arrow_back_24px),
                 contentDescription = "Back",
@@ -362,11 +368,12 @@ fun Upbar(Img_url: String, name: String , lasttime: String,) {
                 modifier = Modifier
                     .padding(start = 12.dp)
                     .size(40.dp)
-                    .clickable {
+                    .clickable(
+                        enabled = isNavReady,
+                        onClick = {
 
-
-                    }
-
+                        }
+                    )
             )
         }
         Spacer(modifier = Modifier.fillMaxWidth(0.1f))

@@ -36,6 +36,7 @@ import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModelFactory
+
 import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.DeleteMessage
 import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.MessageList
 import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.Upbar
@@ -68,7 +69,6 @@ class Chat_with_Friends_fragment : Fragment() {
         return ComposeView(requireContext()).apply {
 
             setContent {
-
 
 
                 val name = UID(userData = googleAuthUiClient.getSignedInUser())
