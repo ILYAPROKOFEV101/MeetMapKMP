@@ -22,13 +22,13 @@
 
 ## 📸 Скриншоты
 
-| Карта с метками | Детали метки | Чат с друзьями |
+| Карта с метками | Детали метки | Список друзей |
 |-----------------|--------------|----------------|
-| <img src="https://github.com/user-attachments/assets/c16d7a9b-fef7-4838-998b-1705b64e0153" width="300"> | <img src="https://github.com/user-attachments/assets/068defd3-df8e-43b2-91c2-a352310f3d42" width="300"> | <img src="https://github.com/user-attachments/assets/fa8444cf-5d15-4b0e-bc5e-de7bc5da701f" width="300"> |
+| <img src="https://github.com/user-attachments/assets/dfe25d18-dc11-4b92-9302-8e5a738cc5c3" width="300"> | <img src="https://github.com/user-attachments/assets/9dcb4214-f2df-4ac2-a201-6a6b61a1ce4d" width="300"> | <img src="https://github.com/user-attachments/assets/da9272dc-ea7f-4cd4-80ad-2136392bc567" width="300"> |
 
-| Список друзей | Управление сообщениями |
+| Чат с друзьями | Управление сообщениями |
 |---------------|------------------------|
-| <img src="https://github.com/user-attachments/assets/bd2a3e36-a2ee-4bbd-b6f5-f9fdd6c00f81" width="300"> | <img src="https://github.com/user-attachments/assets/e72dfc9a-a654-45b8-8381-12a945238030" width="300"> |
+| <img src="https://github.com/user-attachments/assets/c975b9c0-99e8-45ad-b5a0-62156486e3bb" width="300"> | <img src="https://github.com/user-attachments/assets/db55c2cb-9472-4e3f-bc2d-36abc60d1871" width="300"> |
 
 ---
 
