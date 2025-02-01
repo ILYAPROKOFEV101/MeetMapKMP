@@ -1,0 +1,121 @@
+package com.ilya.platform.di
+
+import android.content.Context
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
+import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
+
+class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
+
+    override fun onCreate(db: SQLiteDatabase) {
+        db.execSQL(CREATE_TABLE_MARKERS)
+    }
+
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS markers")
+        onCreate(db)
+    }
+
+    fun createDynamicTable(tableName: String) {
+        val createTableQuery = """
+            CREATE TABLE IF NOT EXISTS $tableName (
+                message_id TEXT PRIMARY KEY,
+                content TEXT,
+                profilerIMG TEXT,
+                messageTime INTEGER,
+                key TEXT,
+                senderUsername TEXT,
+                gifUrls TEXT,
+                imageUrls TEXT,
+                videoUrls TEXT,
+                fileUrls TEXT
+            )
+        """.trimIndent()
+        writableDatabase.execSQL(createTableQuery)
+    }
+
+    fun insertMessage(
+        tableName: String,
+        message: Messages_Chat
+    ): Boolean {
+        val insertQuery = """
+            INSERT INTO $tableName (message_id, content, profilerIMG, messageTime, key, senderUsername, gifUrls, imageUrls, videoUrls, fileUrls)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """.trimIndent()
+        return try {
+            writableDatabase.execSQL(
+                insertQuery,
+                arrayOf(
+                    message.messageId,
+                    message.content,
+                    message.profilerIMG,
+                    message.messageTime,
+                    message.key,
+                    message.senderUsername,
+                    message.gifUrls.joinToString(","),
+                    message.imageUrls.joinToString(","),
+                    message.videoUrls.joinToString(","),
+                    message.fileUrls.joinToString(",")
+                )
+            )
+            true
+        } catch (e: Exception) {
+            Log.e("DatabaseHelper", "Error inserting message into $tableName", e)
+            false
+        }
+    }
+
+    fun getAllMessages(tableName: String): List<Messages_Chat> {
+        val query = "SELECT * FROM $tableName"
+        val cursor = readableDatabase.rawQuery(query, null)
+        val messages = mutableListOf<Messages_Chat>()
+
+        cursor.use {
+            while (it.moveToNext()) {
+                messages.add(
+                    Messages_Chat(
+                        messageId = it.getString(it.getColumnIndexOrThrow("message_id")),
+                        content = it.getString(it.getColumnIndexOrThrow("content")),
+                        profilerIMG = it.getString(it.getColumnIndexOrThrow("profilerIMG")),
+                        messageTime = it.getLong(it.getColumnIndexOrThrow("messageTime")),
+                        key = it.getString(it.getColumnIndexOrThrow("key")),
+                        senderUsername = it.getString(it.getColumnIndexOrThrow("senderUsername")),
+                        gifUrls = it.getString(it.getColumnIndexOrThrow("gifUrls")).split(","),
+                        imageUrls = it.getString(it.getColumnIndexOrThrow("imageUrls")).split(","),
+                        videoUrls = it.getString(it.getColumnIndexOrThrow("videoUrls")).split(","),
+                        fileUrls = it.getString(it.getColumnIndexOrThrow("fileUrls")).split(",")
+                    )
+                )
+            }
+        }
+
+        return messages
+    }
+
+    companion object {
+        private const val DATABASE_NAME = "markers.db"
+        private const val DATABASE_VERSION = 1
+
+        private const val CREATE_TABLE_MARKERS = """
+            CREATE TABLE markers (
+                id TEXT PRIMARY KEY,
+                [key] TEXT NOT NULL,
+                username TEXT NOT NULL,
+                imguser TEXT NOT NULL,
+                photomark TEXT NOT NULL,
+                street TEXT NOT NULL,
+                lat REAL NOT NULL,
+                lon REAL NOT NULL,
+                name TEXT NOT NULL,
+                whatHappens TEXT NOT NULL,
+                startDate TEXT NOT NULL,
+                endDate TEXT NOT NULL,
+                startTime TEXT NOT NULL,
+                endTime TEXT NOT NULL,
+                participants INTEGER NOT NULL,
+                access INTEGER NOT NULL
+            )
+        """
+    }
+}

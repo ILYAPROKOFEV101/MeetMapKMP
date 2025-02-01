@@ -1,0 +1,14 @@
+#Kotlin
+kotlin.code.style=official
+kotlin.daemon.jvmargs=-Xmx4096M
+
+#Gradle
+org.gradle.jvmargs=-Xmx409M -Dfile.encoding=UTF-8
+
+#Android
+android.nonTransitiveRClass=true
+android.useAndroidX=true
+
+kotlin.native.ignoreDisabledTargets=true
+kotlin.mpp.androidGradlePluginCompatibility.nowarn=true
+

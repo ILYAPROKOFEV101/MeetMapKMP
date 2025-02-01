@@ -3,6 +3,7 @@ package com.ilya.meetmapkmp.Mine_menu
 
 import com.ilya.meetmapkmp.Map.Server_API.POST.Became_Participant_fun
 import MapMarker
+
 import MarkerAdapter
 import MarkerData
 import SpaceItemDecoration
@@ -43,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -88,11 +90,19 @@ import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.profile.IMG
 import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
+import com.ilya.meetmapkmp.Map.DB.convertMapMarkerToMarkerData
+import com.ilya.meetmapkmp.Map.DB.convertMarkerDataListToMarkerList
+import com.ilya.meetmapkmp.Map.DB.convertMarkerListToMarkerDataList
+import com.ilya.meetmapkmp.Map.Interfaces.MarkerManager
+
 import com.ilya.meetmapkmp.Map.Server_API.GET.getAddressFromCoordinates
 import com.ilya.meetmapkmp.Map.Server_API.POST.postInvite
 import com.ilya.meetmapkmp.Map.ViewModel.MapViewModel
+import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModel
+import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModelFactory
 import com.ilya.meetmapkmp.R
 import com.ilya.meetmapkmp.SocialMap.SocialMapActivity
+import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 import decodePoly
 import generateUID
@@ -122,12 +132,15 @@ import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
+
+
 
 
 @OptIn(ExperimentalPermissionsApi::class)
 class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolylineClickListener, GoogleMap.OnMapClickListener,
-    WebSocketCallback {
+     WebSocketCallback, MarkerManager {
 
     private lateinit var mMap: GoogleMap
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -136,6 +149,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     private var distanceTextView: TextView? = null
     private var totalDistance: Double = 0.0
     private var lastLocation: Location? = null
+    private val markers: MutableList<Marker> = mutableListOf()
     private var speedUnit = "KM/H"
     private val updateSpeedHandler = Handler()
     private var destinationMarker: Marker? = null
@@ -143,7 +157,6 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     private lateinit var webSocketClient: WebSocketClient
     private var currentDialog: AlertDialog? = null
     private val collectedFriends = mutableListOf<Friends_type>()
-
     var currentLatLngGlobal by mutableStateOf<LatLng>(LatLng(0.0, 0.0))
     var routePoints by mutableStateOf<LatLng>(LatLng(0.0, 0.0))
     private val googleAuthUiClient by lazy {
@@ -154,16 +167,21 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     }
     private val client = OkHttpClient()
     private lateinit var shakeDetector: ShakeDetector
-    val mapViewModel: MapViewModel  by viewModels()
-
-
-    val webSocketManager = WebSocketManager(client, this)
+    private var isItemDecorationAdded = false // Флаг
+    private val webSocketManager = WebSocketManager(client, this)
+    val markerDataMap: MutableMap<Marker, MarkerData> = ConcurrentHashMap()
 
     private companion object {
         private const val MY_PERMISSIONS_REQUEST_LOCATION = 1
     }
-    private lateinit var backgroundHandler: Handler
-    private lateinit var handlerThread: HandlerThread
+
+    // Список для хранения данных маркеров (MarkerData)
+    // Создайте map для хранения связи между маркерами карты и данными
+ //   private val markerDataMap: MutableMap<Marker, MarkerData> = mutableMapOf()
+
+
+
+
 
     var uid_main = ""
 
@@ -171,19 +189,15 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
 
-        // Инициализация WebSocketClient
-        val uid_user = ID(userData = googleAuthUiClient.getSignedInUser())
+
+       var PersonalizedMarkersViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
 
 
-        val url = "wss://meetmap.up.railway.app/map/$uid_user/${getUserKey(this)}"
+        val url = "wss://meetmap.up.railway.app/map/${ID(userData = googleAuthUiClient.getSignedInUser())}/${getUserKey(this)}"
         webSocketClient = WebSocketClient(url)
-
-
-
-
-
-
-
 
         val name = UID(userData = googleAuthUiClient.getSignedInUser())
         val img = IMG(userData = googleAuthUiClient.getSignedInUser())
@@ -239,81 +253,85 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         supportActionBar?.hide()
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        // Пример вызова этой функции из корутины
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        ) {
-            initializeMap()
-        } else {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                MY_PERMISSIONS_REQUEST_LOCATION
-            )
-        }
-                //WEBSOCKET
-            // получаю данные по метка где я участник, по websoket
+
+        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) { initializeMap() } else { ActivityCompat.requestPermissions(this, arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION), MY_PERMISSIONS_REQUEST_LOCATION) }
+
         CoroutineScope(Dispatchers.IO).launch {
             lifecycleScope.launch {
                 var previousMarkers: List<MarkerData>? = null // Храним предыдущие данные
-                val markerList: MutableList<MarkerData> = mutableListOf()
-                while (true) {
-                    try {
-                        // Получаем данные через getParticipant
-                        val currentMarkers = getParticipant(uid.toString(), getUserKey(this@Map_Activity).toString())
+                // тут я отрисовываю маркеры на карте, сохраненные в базе данных
+                val initialMarkers = convertMarkerListToMarkerDataList(PersonalizedMarkersViewModel.getAllMarkers())
+                handleReceivedMarkers("$uid", initialMarkers.toMutableList())
 
-                        Log.d("WebSocket", "Received marker data: $currentMarkers")
+                // Первый цикл — запросы к базе данных раз в 1 секунду
+                launch {
+                    while (true) {
+                        try {
+                            // Получаем новые данные из базы данных
+                            val currentMarkers = convertMarkerListToMarkerDataList(PersonalizedMarkersViewModel.getAllMarkers())
 
-                        // Сравниваем текущие данные с предыдущими
-                        if (currentMarkers != previousMarkers) {
-                            // Данные изменились, обрабатываем их
-                            handleReceivedMarkers("$uid", currentMarkers.toMutableList())
+                            // Сравниваем текущие данные с предыдущими
+                            if (currentMarkers != previousMarkers) {
+                                // Данные изменились, обрабатываем их
+                                handleReceivedMarkers("$uid", currentMarkers.toMutableList())
 
-                            withContext(Dispatchers.Main) {
-                                // Обновление UI или выполнение других действий с данными
-                                currentMarkers.forEach { markerData ->
-                                    Log.d("WebSocket", "Marker: $markerData")
+                                withContext(Dispatchers.Main) {
+                                    // Обновление UI или выполнение других действий с данными
+                                    currentMarkers.forEach { markerData ->
+                                        Log.d("MYmarkesrs", "New Marker: $markerData")
 
-                                    // Преобразование MarkerData в MapMarker
-                                    val mapMarker = markerDataToMapMarker(markerData)
+                                        // Преобразование MarkerData в MapMarker
+                                        val mapMarker = markerDataToMapMarker(markerData)
 
-                                    // Добавление маркера на карту
-                                    val markerLatLng = LatLng(mapMarker.lat, mapMarker.lon)
-                                    val marker = addMarker(markerLatLng, mapMarker.name)
-                                    if (marker != null) {
-                                        markerDataMap[marker] = mapMarker
+                                        // Добавление маркера на карту
+                                        addMarker(LatLng(mapMarker.lat, mapMarker.lon), markerData)
+
                                     }
                                 }
+                            } else {
+                                Log.d("MYmarkesrs", "Markers unchanged, skipping handleReceivedMarkers")
                             }
-                        } else {
-                            Log.d("WebSocket", "Markers unchanged, skipping handleReceivedMarkers")
+                            // Обновляем предыдущие данные
+                            previousMarkers = currentMarkers
+                        } catch (e: Exception) {
+                            Log.e("MYmarkesrs", "Error processing markers", e)
                         }
-                        // Обновляем предыдущие данные
-                        previousMarkers = currentMarkers
-                    } catch (e: Exception) {
-                        Log.e("WebSocket", "Error processing markers", e)
+
+                        // Пауза перед следующим запросом к базе данных
+                        delay(1000) // 1 секунда
                     }
-                    // Пауза перед следующим запросом
-                    delay(10000) // 10 секунд
+                }
+
+                // Второй цикл — запросы к серверу раз в 30 секунд
+                launch {
+                    while (true) {
+                        try {
+                            // Получаем данные с сервера
+                            val server = getParticipant(uid.toString(), getUserKey(this@Map_Activity).toString())
+
+                            // Сохраняем данные в базу данных
+                            PersonalizedMarkersViewModel.addMarkers(convertMarkerDataListToMarkerList(server))
+                        } catch (e: Exception) {
+                            Log.e("MYmarkesrs", "Error fetching data from server", e)
+                        }
+
+                        // Пауза перед следующим запросом к серверу
+                        delay(30000) // 30 секунд
+                    }
                 }
             }
         }
 
     }
 
-
-
-
-
-    private var isItemDecorationAdded = false // Флаг
-
-
+        // нужно чтобы отоброжать данные по меткам в нижнем баре
     private suspend fun handleReceivedMarkers(uid: String, markerList: MutableList<MarkerData>) {
 
-
+        var DBViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
 
         withContext(Dispatchers.Main) {
 
@@ -329,14 +347,17 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                     isItemDecorationAdded = true
                 }
 
-                val adapter = recyclerView.adapter
-                if (adapter is MarkerAdapter) {
-                    adapter.notifyDataSetChanged()
-                } else {
-                    recyclerView.adapter = MarkerAdapter(markerList, this@Map_Activity, uid)
-                }
-            }
 
+            // Устанавливаем адаптер с нужными параметрами
+            recyclerView.adapter = MarkerAdapter(
+                markerList,
+                this@Map_Activity, // Передаем Map_Activity для обработки кликов
+                this@Map_Activity,  // Передаем MapMarkerManager для управления маркерами
+                uid,
+                DBViewModel
+            )
+
+            }
     }
 
         // Вызов алерт диалог , для тогочтобы показать друга
@@ -428,6 +449,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
             }
         }
 
+
     fun onFindLocation(lat: Double, lon: Double) {
         findLocation_mark(lat, lon) // Вызов функции перемещения камеры
         routePoints = LatLng(lat, lon)
@@ -460,7 +482,6 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         polylineOptions = PolylineOptions()
     }
 
-    private val markerDataMap = mutableMapOf<Marker, MapMarker>()
 
     fun onStandardButtonClick(view: View) {
         mMap.mapType = GoogleMap.MAP_TYPE_NORMAL
@@ -473,6 +494,12 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onMapReady(googleMap: GoogleMap) {
+        var DBViewModel = ViewModelProvider(
+        this,
+        PersonalizedMarkersViewModelFactory(applicationContext)
+    ).get(PersonalizedMarkersViewModel::class.java)
+
+
         mMap = googleMap
         mMap.mapType = GoogleMap.MAP_TYPE_SATELLITE
         mMap.uiSettings.isMapToolbarEnabled = true
@@ -511,6 +538,11 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
             }
         }
 
+        val mapViewModel: MapViewModel by viewModels {
+            ViewModelProvider.AndroidViewModelFactory.getInstance(this.application)
+        }
+
+
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             mMap.isMyLocationEnabled = true
 
@@ -527,10 +559,8 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                                     mapViewModel.markers.collect { markers ->
                                         markers.forEach { mapMarker ->
                                             val markerLatLng = LatLng(mapMarker.lat, mapMarker.lon)
-                                            val marker = addMarker(markerLatLng, mapMarker.name)
-                                            marker?.let {
-                                                markerDataMap[marker] = mapMarker
-                                            }
+                                             addMarker(markerLatLng, convertMapMarkerToMarkerData(mapMarker))
+
                                         }
                                     }
                                 } catch (e: Exception) {
@@ -561,18 +591,25 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                         updateSpeed(it.speed)
                         updateDistance(it)
 
-                        // Установка обработчика кликов по маркерам
+
+                        // В вашей активности или фрагменте, где находится GoogleMap
                         mMap.setOnMarkerClickListener { marker ->
-                            markerDataMap[marker]?.let { mapMarker ->
-                                showMarkerDialog(mapMarker)
-                                Log.d("MarkerData_new2", mapMarker.toString())
+                            // Получаем данные маркера из map, используя сам объект marker
+                            val mapMarker = markerDataMap[marker]
+
+                            mapMarker?.let {
+                                // Показываем информацию о маркере в диалоговом окне
+                                showMarkerDialog(it)
+                                Log.d("MarkerData_new2", it.toString())
                             }
-                            true
+
+                            true  // Возвращаем true, чтобы предотвратить стандартное поведение (открытие InfoWindow)
                         }
+
 
                         // Установка обработчика кликов по карте
                         mMap.setOnMapClickListener { latLng ->
-                            showAddMarkerDialog(latLng, this, uid_main, this)
+                            showAddMarkerDialog(latLng, this, uid_main, this, DBViewModel)
                         }
 
                         // Инициализация объекта Polyline
@@ -592,6 +629,32 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                     }
                 }
             }, 200) // Задержка в 0.2 секунду перед выполнением кода
+        }
+    }
+    override fun removeSpecificMarker(markerData: MarkerData) {
+        Handler(Looper.getMainLooper()).post {
+            Log.d("RemoveMarker", "Попытка удалить маркер с id=${markerData.id}")
+            Log.d(
+                "RemoveMarker",
+                "Состояние markerDataMap до удаления: ${markerDataMap.entries.map { "key=${it.key.title}, id=${it.value.id}" }}"
+            )
+
+            val markerToRemove = markerDataMap.entries.find { it.value.id == markerData.id }
+
+            markerToRemove?.let { entry ->
+                // Удаление маркера с карты
+                entry.key.remove()
+
+                // Удаление маркера из коллекции
+                markerDataMap.remove(entry.key)
+
+                Log.d("RemoveMarker", "Метка с id=${markerData.id} успешно удалена")
+            } ?: run {
+                Log.e(
+                    "RemoveMarker",
+                    "Маркер с id=${markerData.id} не найден. Текущее состояние: ${markerDataMap.entries.map { "key=${it.key.title}, id=${it.value.id}" }}"
+                )
+            }
         }
     }
 
@@ -666,7 +729,12 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
 
 
-    private fun showMarkerDialog(marker: MapMarker) {
+    private fun showMarkerDialog(marker: MarkerData) {
+        var DBViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
+
 
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_view_marker, null)
         val marker_image  = dialogView.findViewById<ImageView>(R.id.marker_image)
@@ -697,11 +765,13 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         // Обработка нажатия кнопки "Нет"
         marker_button_not.setOnClickListener {
             dialog.dismiss()
+                removeSpecificMarker(marker)
         }
 
         // Обработка нажатия кнопки "Готово"
         marker_button_ready.setOnClickListener {
             CoroutineScope(Dispatchers.IO).launch {
+                DBViewModel.addMarkers(convertMarkerDataListToMarkerList(listOf(marker)))
                 Became_Participant_fun(uid_main, key.toString(), marker.id)
             }
             dialog.dismiss()
@@ -712,41 +782,55 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onMapClick(latLng: LatLng) {
-        showAddMarkerDialog(latLng, this, uid_main, this)
+        var DBViewModel = ViewModelProvider(
+            this,
+            PersonalizedMarkersViewModelFactory(applicationContext)
+        ).get(PersonalizedMarkersViewModel::class.java)
+
+        showAddMarkerDialog(latLng, this, uid_main, this, DBViewModel)
     }
 
-    fun set_addMarker(latLng: LatLng, markerName: String){
-        addMarker(latLng, markerName)
-    }
 
-   private fun addMarker(latLng: LatLng, markerName: String): Marker? {
-        // Проверьте, инициализирована ли карта
-        if (::mMap.isInitialized) {
-            // Добавьте новую метку
-            val marker = mMap.addMarker(
-                MarkerOptions()
-                    .position(latLng)
-                    .title(markerName)
-                    .icon(
-                        bitmapDescriptorFromVector(
-                            this@Map_Activity, // Контекст (возможно, вам понадобится другой)
-                            R.drawable.location_on_, // Ресурс маркера
-                            "FF005B", // Цвет маркера в шестнадцатеричном формате
-                            140, // Ширина маркера
-                            140  // Высота маркера
-                        )
-                    )
-            )
-            // Сохраните метку в переменную destinationMarker, если нужно
-            destinationMarker = marker
 
-            // Возвращаем созданную метку
-            return marker
-        } else {
+    private fun addMarker(latLng: LatLng, markerData: MarkerData): Marker? {
+        if (!::mMap.isInitialized) {
             Log.e("MapError", "mMap не инициализирован")
             return null
         }
+
+        // Проверяем, есть ли метка с таким же id
+        if (markerDataMap.values.any { it.id == markerData.id }) {
+            Log.w("AddMarker", "Метка с id=${markerData.id} уже существует. Добавление отменено.")
+            return null
+        }
+
+        // Добавляем новую метку на карту
+        val marker = mMap.addMarker(
+            MarkerOptions()
+                .position(latLng)
+                .title(markerData.name)
+                .icon(
+                    bitmapDescriptorFromVector(
+                        this@Map_Activity,
+                        R.drawable.location_on_,
+                        "FF005B",
+                        140,
+                        140
+                    )
+                )
+        )
+
+        // Сохраняем маркер, если он успешно добавлен
+        marker?.let {
+            markerDataMap[it] = markerData
+            Log.d("AddMarker", "Метка добавлена: id=${markerData.id}, name=${markerData.name}")
+        }
+
+        return marker
     }
+
+
+
 
     // Добавьте метод для поиска местоположения по адресу
     private fun findLocation(address: String) {
@@ -787,6 +871,8 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
             Toast.makeText(this, "Map is not available", Toast.LENGTH_SHORT).show()
         }
     }
+
+
 
     override fun onRequestPermissionsResult(
         requestCode: Int,
@@ -848,7 +934,8 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
         latLng: LatLng,
         context: Context,
         uid_main: String,
-        activity: FragmentActivity // добавлен параметр
+        activity: FragmentActivity, // добавлен параметр
+        DB_ViewModel: PersonalizedMarkersViewModel
     ) {
 
         // val addmarker = Map_Activity()
@@ -985,18 +1072,17 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                         // Запуск на главном потоке для обновления UI
                         withContext(Dispatchers.Main) {
 
-                            set_addMarker(latLng, markerTitle)
+                            addMarker(latLng, markerData)
 
                             val gson = Gson()
                             val markerDataJson = gson.toJson(markerData)
                             Log.d("PushDataJoin", "MarkerData JSON: $markerDataJson")
 
-                            // Запуск корутины для отправки данных на сервер
+                            // Запуск корутины для отправки данных на сервер и
                             CoroutineScope(Dispatchers.IO).launch {
                                 postInvite(getUserKey(context).toString(), uid_main, markerData)
+                                DB_ViewModel.addMarkers(convertMarkerDataListToMarkerList(listOf(markerData)))
                             }
-
-
                         }
                     }
                 } else {

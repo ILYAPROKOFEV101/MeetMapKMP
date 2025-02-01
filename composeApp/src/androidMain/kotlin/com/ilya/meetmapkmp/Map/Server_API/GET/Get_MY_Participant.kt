@@ -1,4 +1,5 @@
 import android.util.Log
+import com.google.android.datatransport.BuildConfig
 import com.ilya.meetmapkmp.Map.Interfaces.Get_MY_Participant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -13,50 +14,45 @@ import java.util.concurrent.TimeUnit
 
 
 
-
-// Функция для получения данных участников
-suspend fun getParticipant(uid: String, key: String): List<MarkerData> {
-    // Логирование для диагностики сетевых запросов
-    val logging = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BODY
+object RetrofitClient {
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+        else HttpLoggingInterceptor.Level.NONE
     }
 
-    // Клиент с увеличенными тайм-аутами
-    val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(logging)
-        .connectTimeout(30, TimeUnit.SECONDS) // время на подключение
-        .readTimeout(30, TimeUnit.SECONDS)    // время на чтение ответа
-        .writeTimeout(30, TimeUnit.SECONDS)   // время на отправку данных
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    // Инициализация Retrofit с клиентом OkHttp и URL
-    val retrofit = Retrofit.Builder()
+    val retrofit: Retrofit = Retrofit.Builder()
         .baseUrl("https://meetmap.up.railway.app/")
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()
 
-    // Создание экземпляра интерфейса API
-    val apiService = retrofit.create(Get_MY_Participant::class.java)
+    val apiService: Get_MY_Participant = retrofit.create(Get_MY_Participant::class.java)
+}
 
-    // Логирование запроса для отладки
-    Log.d("MarkerData_getParticipant", "URL запроса: https://meetmap.up.railway.app/get/participantmark/$uid/$key")
 
-    // Выполнение запроса в фоновом потоке
+suspend fun getParticipant(uid: String, key: String): List<MarkerData> {
     return withContext(Dispatchers.IO) {
         try {
-            val markerData = apiService.getParticipant(uid, key)
+            Log.d("MarkerData_getParticipant", "Выполняем запрос: https://meetmap.up.railway.app/get/participantmark/$uid/$key")
+            val markerData = RetrofitClient.apiService.getParticipant(uid, key)
             Log.d("MarkerData_getParticipant", "Полученные данные маркера: $markerData")
             markerData
         } catch (e: HttpException) {
             Log.e("MarkerData_getParticipant", "HTTP ошибка: ${e.code()}", e)
-            throw e
+            emptyList() // Возвращаем пустой список или перекидываем исключение
         } catch (e: IOException) {
             Log.e("MarkerData_getParticipant", "Сетевая ошибка", e)
-            throw e
+            emptyList() // Возвращаем пустой список или перекидываем исключение
         } catch (e: Exception) {
             Log.e("MarkerData_getParticipant", "Неизвестная ошибка", e)
-            throw e
+            emptyList() // Возвращаем пустой список или перекидываем исключение
         }
     }
 }

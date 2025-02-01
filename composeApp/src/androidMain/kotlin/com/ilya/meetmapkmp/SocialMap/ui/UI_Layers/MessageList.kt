@@ -2,15 +2,18 @@ package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 
 import android.content.ContentResolver
 import android.content.Context
+import android.media.Image
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +28,9 @@ import androidx.compose.ui.unit.dp
 
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -37,17 +42,24 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -55,7 +67,10 @@ import androidx.compose.runtime.Composable
 
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +81,8 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -75,7 +92,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
+import coil.size.Precision
 
 import com.ilya.meetmapkmp.R
 import com.ilya.Supabase.androidLog
@@ -85,10 +105,12 @@ import com.ilya.meetmapkmp.SocialMap.DataModel.Messages_Chat
 
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
 import com.ilya.meetmapkmp.SocialMap.ViewModel.FileViewModel
+
 import createTempFileFromUri
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.Instant
@@ -100,9 +122,7 @@ import java.util.UUID
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: String, my_key: String) {
-
-
+fun MessageList(navController: NavController, chatViewModel: ChatViewModel, username: String, my_avatar: String, my_key: String) {
 
     val messages by chatViewModel.messages.collectAsState()
     val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
@@ -139,7 +159,7 @@ fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: Strin
         ) {
             items(messages) { message ->
                 Spacer(modifier = Modifier.height(10.dp))
-                MessageCard(message, my_key, painter, username)
+                MessageCard(navController , chatViewModel, message, my_key, painter, username)
             }
         }
         Spacer(modifier = Modifier.height(10.dp))  // Пробел перед текстовым полем
@@ -151,7 +171,7 @@ fun MessageList(chatViewModel: ChatViewModel, username: String, my_avatar: Strin
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, username: String) {
+fun MessageCard(navController: NavController ,chatViewModel: ChatViewModel, message: Messages_Chat, my_key: String, my_avatar: Painter, username: String) {
     val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
     val Notmy_message_color = if (isSystemInDarkTheme()) Color(0xFFFFFFFF)
     else Color(0xFF303133)
@@ -159,13 +179,60 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
     val height by remember { mutableStateOf(60.dp) }
     val screenWidth = LocalConfiguration.current.screenWidthDp.dp
     val isMyMessage = message.key == my_key
+    var click by remember { mutableStateOf(false) }
+    var checked by remember { mutableStateOf(true) }
+    val my_massege = if (isSystemInDarkTheme()) Color(0xFFFFFFFF)
+    else  Color(0xFF1B1B1B)
+    val notmy_massege = if (isSystemInDarkTheme()) Color(0xFF1B1B1B) else  Color(0xFFFFFFFF)
+
+
+
 
     // Определил шрифт для сообщений
     val font = FontFamily(
         Font(R.font.open_sans_semi_condensed_regular, FontWeight.Normal),
     )
-    Column(modifier = Modifier)
+    Column(
+        modifier = Modifier
+            .clickable {
+                click = !click // Переключаем состояние при клике
+                if (click) {
+                    // Добавляем сообщение в список
+                    if( chatViewModel.getSendToServer() != null){
+                        navController.navigate("delete"){
+                            launchSingleTop = true // Этот флаг предотвращает создание нескольких экранов
+                        }
+                    } else {
+                        navController.navigate("Friend"){
+                            launchSingleTop = true // Этот флаг предотвращает создание нескольких экранов
+                        }
+                    }
+                    chatViewModel.addToSendToServer(message.messageId.toString())
+                } else {
+                    // Удаляем сообщение из списка
+                    chatViewModel.removeFromSendToServer(message.messageId.toString())
+                }
+            } // Изменяем состояние при клике
+            .background(
+                if (click) Color(0x002A2A2A).copy(alpha = 0.1f) // Синий прозрачный цвет
+                else Color.Transparent // Прозрачный цвет по умолчанию
+            )
+    )
     {
+Row(modifier = Modifier)
+{
+    Box(
+        modifier = Modifier
+            .padding(end = 8.dp) // Отступ между Checkbox и текстом
+    ) {
+        if (click) { // Условие показа Checkbox
+            Checkbox(
+                modifier = Modifier.clip(RoundedCornerShape(80.dp)),
+                checked = checked,
+                onCheckedChange = { checked = it }
+            )
+        }
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -173,36 +240,25 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
         horizontalArrangement = if (isMyMessage) Arrangement.End else Arrangement.Start
     ) {
 
-            val imageModifier = Modifier
-                .size(40.dp)
-                .clip(RoundedCornerShape(40.dp))
 
-            if (!(isMyMessage)) {
-                Image(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = imageModifier
-                )
-                Spacer(modifier = Modifier.width(2.dp))
-
-            }
-
-            Card(
-                modifier = Modifier
-                    .wrapContentWidth()
-                    .padding(
-                        end = if (isMyMessage) 0.dp else screenWidth * 0.2f,
-                        top = 2.dp,
-                        start = if (isMyMessage) screenWidth * 0.2f else 0.dp,
-                        bottom = 2.dp
-                    ),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isMyMessage) Color(0xFF315FF3) else Color(
-                        0xFFFFFFFF
-                    )
+        Card(
+            modifier = Modifier
+                .wrapContentWidth()
+                .padding(
+                    end = if (isMyMessage) 0.dp else screenWidth * 0.2f,
+                    top = 2.dp,
+                    start = if (isMyMessage) screenWidth * 0.2f else 0.dp,
+                    bottom = 2.dp
                 ),
-                shape = RoundedCornerShape(12.dp)
-            ) {
+            colors = CardDefaults.cardColors(
+                containerColor = if (isMyMessage) Color(0xFF315FF3) else
+                    Color.Transparent
+            ),
+            shape = RoundedCornerShape(12.dp)
+        )
+        {
+            Row(modifier = Modifier)
+            {
                 Column(
                     modifier = Modifier
                         .padding(8.dp)
@@ -214,15 +270,15 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
                         fontSize = 18.sp,
                         fontFamily = font,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isMyMessage) Color(0xFFFFFFFF) else Color(
-                            0xFF1B1B1B
+                        color = if (!isMyMessage) my_massege
+                        else Color(
+                            0xFFFFFFFF
                         ),
                         overflow = TextOverflow.Ellipsis
                     )
 
                     Box(
                         modifier = Modifier
-                            // .fillMaxWidth()
                             .wrapContentHeight(),
                         contentAlignment = Alignment.CenterEnd
                     )
@@ -247,9 +303,14 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
 
                     }
                 }
-            }
 
+
+            }
         }
+
+
+    }
+}
         if (message.imageUrls.isNotEmpty()) {
             Spacer(Modifier.height(5.dp))
             Row(
@@ -282,18 +343,162 @@ fun MessageCard(message: Messages_Chat, my_key: String, my_avatar: Painter, user
     }
 
 
+@Composable
+fun Upbar(
+    Img_url: String,
+    name: String,
+    lasttime: String
+) {
+    val coroutineScope = rememberCoroutineScope()
+    var isNavReady by remember { mutableStateOf(false) }
+
+
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(Color(0xFF315FF3))
+    ) {
+        Box(modifier = Modifier.weight(0.1f)) {
+            Icon(
+                painter = painterResource(id = R.drawable.arrow_back_24px),
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier
+                    .padding(start = 12.dp)
+                    .size(40.dp)
+                    .clickable(
+                        enabled = isNavReady,
+                        onClick = {
+
+                        }
+                    )
+            )
+        }
+        Spacer(modifier = Modifier.fillMaxWidth(0.1f))
+
+        Box(
+            modifier = Modifier
+                .weight(0.3f)
+                .fillMaxHeight()
+        ) {
+            Image(
+                painter = rememberImagePainter(
+                    data = Img_url,
+                    builder = {
+                        precision(Precision.EXACT)
+                    }
+                ),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 20.dp)
+            )
+        }
+        Spacer(modifier = Modifier.fillMaxWidth(0.1f))
+
+        // имя и последнее время посещения
+        Column(
+            modifier = Modifier
+                .weight(0.5f)
+                .fillMaxHeight()){
+            Text(
+                text = name,
+                textAlign = TextAlign.Start,
+                fontSize = 20.sp,
+                fontFamily = FontFamily(Font(R.font.open_sans_semi_condensed_regular)),
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+            )
+            Text(
+                text = lasttime,
+                textAlign = TextAlign.Start,
+                fontSize = 14.sp,
+                fontFamily = FontFamily(Font(R.font.open_sans_semi_condensed_regular)),
+                fontWeight = FontWeight.SemiBold,
+                color = Color.White,
+                modifier = Modifier
+                    .padding(start = 10.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun DeleteMessage(rooid: String, navController: NavController, chatViewModel: ChatViewModel) {
+    val coroutineScope = rememberCoroutineScope()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp)
+            .background(Color(0xFF315FF3)),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(
+            onClick = {
+                // Действие для кнопки "Назад"
+                 navController.popBackStack()
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Назад",
+                tint = Color.White
+            )
+        }
+        IconButton(
+            onClick = {
+                coroutineScope.launch {
+                    val messagesToSend = chatViewModel.getSendToServer()
+
+                    // Удаление сообщений из локальной базы данных и отправка на сервер
+                    messagesToSend.forEach { message ->
+                        chatViewModel.delete_from_local_db(rooid, listOf(message))
+
+                    }
+
+                    // Отправка сообщений на сервер
+                    chatViewModel.sendDeleteMessage(chatViewModel.getSendToServer())
+                }
+            }
+        ) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Удалить сообщение",
+                tint = Color.White
+            )
+        }
+    }
+}
+
+
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Material_text_filed(chatViewModel: ChatViewModel) {
+    val customFontFamily = FontFamily(
+        Font(R.font.open_sans_semi_condensed_regular, FontWeight.Normal)
+    )
+    val messages by chatViewModel.messages.collectAsState()
+    val My_message_color = if (isSystemInDarkTheme()) Color(0xFF315ff3) else Color(0xFF2315FF3)
+    val Notmy_message_color = if (isSystemInDarkTheme()) Color(0xFFFFFFFF) else Color(0xFF2315FF3)
+    val background_color = if (isSystemInDarkTheme()) Color(0xFF191C20) else Color(0xFFFFFFFF)
+    val backgroundColor = if (isSystemInDarkTheme()) Color(0xFF191C20) else Color(0xFFFFFFFF)
+    val cursorColor = if (isSystemInDarkTheme()) Color(0xFF191C20) else Color(0xFFFFFFFF)
+    val textColor = if (isSystemInDarkTheme())  Color(0xFFFFFFFF) else  Color(0xFF191C20)
+
     val context = LocalContext.current // Получение текущего контекста
     var text by remember { mutableStateOf("") }
-    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+
     val fileViewModel: FileViewModel = viewModel()
+    val fileList by fileViewModel.fileList.observeAsState(emptyList())
 
-
-    // Лаунчер для выбора нескольких изображений
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenMultipleDocuments(),
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickMultipleVisualMedia(),
         onResult = { uris ->
             uris?.let {
                 Log.d("MaterialTextFiled", "Выбраны изображения: $uris")
@@ -309,48 +514,89 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
         }
     )
 
-
-
-
-
-
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(60.dp)
-    ) {
-        IconButton(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Отображение выбранных файлов
+        LazyRow(
             modifier = Modifier
-                .weight(0.1f)
-                .align(Alignment.CenterVertically),
-            onClick = {
-                // Открытие галереи для выбора изображений
-                Log.d("MaterialTextFiled", "Открываем галерею для выбора изображений")
-                launcher.launch(arrayOf("image/*")) // Ограничиваем выбор только изображениями
-        }
+                .fillMaxWidth()
+                .padding(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.AddPhotoAlternate,
-                contentDescription = "Send"
-            )
+            items(fileList) { (file, filename) ->
+                Box(modifier = Modifier.size(60.dp)) {
+                    Image(
+                        painter = rememberAsyncImagePainter(file),
+                        contentDescription = filename,
+                        modifier = Modifier
+                            .size(60.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable {
+                                fileViewModel.removeFile(file) // Удаление файла
+                            }
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Удалить",
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .background(MaterialTheme.colorScheme.surface, CircleShape)
+                            .size(16.dp)
+                            .clickable {
+                                fileViewModel.removeFile(file) // Удаление файла
+                            }
+                    )
+                }
+            }
         }
 
-        TextField(
-            value = text,
-            onValueChange = { text = it },
-            modifier = Modifier
-                .weight(0.7f)
-                .height(80.dp),
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)  // Позволяет Row увеличиваться по высоте
+        ) {
+            IconButton(
+                modifier = Modifier
+                    .weight(0.1f)
+                    .align(Alignment.CenterVertically),
+                onClick = {
+                    // Открытие галереи для выбора изображений
+                    Log.d("MaterialTextField", "Открываем галерею для выбора изображений")
+                    photoPickerLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
+                }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add"
+                )
+            }
 
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White, // Цвет контейнера при фокусе
-                unfocusedContainerColor = Color.White, // Цвет контейнера без фокуса
-                disabledContainerColor = Color.White, // Цвет контейнера, когда поле недоступно
-                cursorColor = Color.White, // Цвет курсора
+            TextField(
+                value = text,
+                onValueChange = { text = it },
+                modifier = Modifier
+                    .weight(0.7f)
+                    .fillMaxWidth()  // Позволяет TextField расширяться по ширине
+                    .wrapContentHeight(),  // Динамически увеличивает высоту по мере ввода текста
+                textStyle = TextStyle(
+                    fontFamily = customFontFamily,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                ),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = backgroundColor,    // Цвет фона
+                    unfocusedContainerColor = backgroundColor,  // Цвет фона
+                    focusedIndicatorColor = Color.Transparent,  // Прозрачный индикатор
+                    unfocusedIndicatorColor = Color.Transparent, // Прозрачный индикатор
+                    cursorColor = cursorColor,                  // Цвет курсора
+                    focusedTextColor = textColor,               // Цвет текста при фокусе
+                    unfocusedTextColor = textColor              // Цвет текста без фокуса
+                ),
+                maxLines = Int.MAX_VALUE,  // Убираем ограничение на количество строк
+                minLines = 1  // Можно задать минимальное количество строк
+            )
 
-            ),
-            maxLines = 10
-        )
         IconButton(
             modifier = Modifier
                 .weight(0.1f)
@@ -425,6 +671,8 @@ fun Material_text_filed(chatViewModel: ChatViewModel) {
         }
     }
 }
+    }
+
 
 
 // Функция для проверки, является ли файл видео

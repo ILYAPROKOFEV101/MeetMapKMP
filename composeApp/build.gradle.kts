@@ -10,9 +10,20 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.googleGmsGoogleServices)
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10" // Используйте актуальную версию
+    alias(libs.plugins.kotlinxSerialization)
+    alias(libs.plugins.sqlDelight)
 }
 val ktor_version = "3.0.1"
+
+sqldelight {
+    databases {
+        create("Database") {
+            packageName.set("com.ilya")
+        }
+    }
+}
+
+
 
 kotlin {
     androidTarget {
@@ -36,24 +47,7 @@ kotlin {
     jvm("desktop")
     
     @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        moduleName = "composeApp"
-        browser {
-            val rootDirPath = project.rootDir.path
-            val projectDirPath = project.projectDir.path
-            commonWebpackConfig {
-                outputFileName = "composeApp.js"
-                devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-                    static = (static ?: mutableListOf()).apply {
-                        // Serve sources to debug inside browser
-                        add(rootDirPath)
-                        add(projectDirPath)
-                    }
-                }
-            }
-        }
-        binaries.executable()
-    }
+
     
     sourceSets {
         val desktopMain by getting
@@ -164,6 +158,12 @@ kotlin {
             implementation(platform("io.github.jan-tennert.supabase:bom:3.0.2"))
 
             implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
+            // sqldelight
+            implementation(libs.koin.android)
+            implementation(libs.sqldelight.driver.android)
+            implementation("com.jakewharton.timber:timber:5.0.1")
+
+
 
         }
         commonMain.dependencies {
@@ -183,8 +183,23 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
 
             implementation("io.github.jan-tennert.supabase:storage-kt:3.0.2")
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.serialization.kotlinx.json)
+
+            implementation(libs.koin.core)
+            implementation(libs.koin.compose)
+            implementation(libs.koin.compose.viewmodel)
+
+            implementation(libs.kotlinx.datetime)
+
+            implementation(libs.multiplatform.settings)
+            implementation(libs.multiplatform.settings.no.arg)
+            
+
         }
         iosMain.dependencies {
+            implementation(libs.sqldelight.ios)
             implementation("io.ktor:ktor-client-darwin:2.3.4")
         }
         desktopMain.dependencies {
@@ -223,6 +238,7 @@ android {
 
 dependencies {
     implementation(libs.firebase.auth)
+    implementation(libs.androidx.runtime.livedata)
     debugImplementation(compose.uiTooling)
 }
 

@@ -22,6 +22,7 @@ class FileViewModel : ViewModel() {
     private val _fileList = MutableLiveData<List<Pair<File, String>>>(emptyList())
     val fileList: LiveData<List<Pair<File, String>>> = _fileList
 
+
     // Установка состояния загрузки
     fun setUploadingState(isUploading: Boolean) {
         _isUploading.postValue(isUploading)
@@ -29,8 +30,9 @@ class FileViewModel : ViewModel() {
 
     // Добавление файла с именем
     fun addFile(file: File, filename: String) {
-        val currentFiles = _fileList.value.orEmpty().toMutableList()
-        currentFiles.add(file to filename) // Добавляем файл и его имя в список
+        val currentFiles = _fileList.value?.toMutableList() ?: mutableListOf()
+        currentFiles.add(file to filename)
+        _fileList.value = currentFiles
         _fileList.postValue(currentFiles)
         Log.d("FileViewModel", "Файл добавлен: $filename, всего файлов: ${currentFiles.size}")
     }
