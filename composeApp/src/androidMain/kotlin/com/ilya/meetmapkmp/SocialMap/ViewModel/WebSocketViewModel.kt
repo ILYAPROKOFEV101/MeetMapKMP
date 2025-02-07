@@ -2,6 +2,7 @@ package com.ilya.meetmapkmp.SocialMap.ViewModel
 
 import android.app.Application
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -9,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.ilya.meetmapkmp.SocialMap.DATAServices.WebSocketService
 import com.ilya.meetmapkmp.SocialMap.DataModel.Friend
 import com.ilya.platform.DriverFactory
+import com.ilya.platform.di.FriendsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,53 +19,66 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-
-class WebSocket_getfriendsViewModel(context: Context) : ViewModel() {
-
+class WebSocket_getfriendsViewModel : ViewModel() {
     companion object {
-        private const val TAG = "WebSocketViewModel" // Тег для логов
+        private const val TAG = "WebSocketViewModel"
     }
+
+    private val context = AppContextProvider.getContext()
 
     // StateFlow для хранения состояния WebSocket
     private val _webSocketState = MutableStateFlow<WebSocketState>(WebSocketState.Disconnected)
     val webSocketState: StateFlow<WebSocketState> = _webSocketState.asStateFlow()
-    private val driverFactory = DriverFactory(context)
-
-
-
-
 
     // StateFlow для хранения списка друзей
     private val _friends = MutableStateFlow<List<Friend>>(emptyList())
     val friends: StateFlow<List<Friend>> = _friends.asStateFlow()
 
+    // FriendsRepository для работы с базой данных
+    private val friendsRepository = FriendsRepository(
+        SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("friends.db"), null)
+    )
+
+    // WebSocketService для обработки WebSocket сообщений
     private val webSocketService = WebSocketService(
         onMessageReceived = { jsonString ->
             Log.d(TAG, "Message received from server: $jsonString")
-            // Парсим JSON в список Friend и обновляем StateFlow
-            parseFriendFromJson(jsonString)?.let { newFriends ->
-                Log.d(TAG, "Parsed ${newFriends.size} friends from JSON")
-                _friends.value = newFriends
-            }
+            parseAndSaveFriends(jsonString)
         },
         onErrorOccurred = { error ->
             Log.e(TAG, "Error occurred: $error")
-            // Обработка ошибок
             _webSocketState.value = WebSocketState.Error(error)
         }
     )
 
+    init {
+        DriverFactory(context).createFriendsTable()
 
-    init{
-        driverFactory.createFriendsTable()
+        // Загрузка начальных данных
+        loadFriendsFromDatabase()
+
+        // Подписка на изменения в базе данных
+        friendsRepository.onDatabaseChanged = {
+            loadFriendsFromDatabase()
+        }
     }
 
+    private fun loadFriendsFromDatabase() {
+        viewModelScope.launch {
+            try {
+                val allFriends = friendsRepository.getAllFriends()
+                _friends.value = allFriends
+                Log.d(TAG, "Loaded ${allFriends.size} friends from database.")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading friends from database: ${e.message}")
+            }
+        }
+    }
 
-    // Подключение к WebSocket
     fun connect(uid: String, key: String) {
         if (_webSocketState.value is WebSocketState.Connected) {
             Log.w(TAG, "Already connected. Ignoring new connection attempt.")
-            return // Уже подключены
+            return
         }
         Log.d(TAG, "Attempting to connect with uid: $uid, key: $key")
         _webSocketState.value = WebSocketState.Connecting
@@ -72,7 +87,6 @@ class WebSocket_getfriendsViewModel(context: Context) : ViewModel() {
         Log.d(TAG, "WebSocket connection established.")
     }
 
-    // Отключение от WebSocket
     fun disconnect() {
         Log.d(TAG, "Disconnecting WebSocket...")
         webSocketService.disconnect()
@@ -80,7 +94,6 @@ class WebSocket_getfriendsViewModel(context: Context) : ViewModel() {
         Log.d(TAG, "WebSocket disconnected.")
     }
 
-    // Отправка команды через WebSocket
     fun sendCommand(command: String) {
         if (_webSocketState.value is WebSocketState.Connected) {
             Log.d(TAG, "Sending command: $command")
@@ -90,20 +103,26 @@ class WebSocket_getfriendsViewModel(context: Context) : ViewModel() {
             _webSocketState.value = WebSocketState.Error("WebSocket is not connected")
         }
     }
+    fun deletefriends_from_bd(token: String){
+        friendsRepository.deleteFriendByToken(token)
+    }
 
-    // Функция для парсинга JSON в объект Friend
-    private fun parseFriendFromJson(jsonString: String): List<Friend>? {
-        return try {
-            Log.d(TAG, "Parsing JSON string into Friend objects...")
-            Json.decodeFromString<List<Friend>>(jsonString)
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to parse JSON: ${e.message}")
-            e.printStackTrace()
-            null
+
+
+    private fun parseAndSaveFriends(jsonString: String) {
+        viewModelScope.launch {
+            try {
+                val newFriends = Json.decodeFromString<List<Friend>>(jsonString)
+                newFriends.forEach { friend ->
+                    friendsRepository.insertOrUpdateFriend(friend)
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to parse JSON or save friends: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
-    // Состояния WebSocket
     sealed class WebSocketState {
         object Connecting : WebSocketState()
         object Connected : WebSocketState()
@@ -111,14 +130,3 @@ class WebSocket_getfriendsViewModel(context: Context) : ViewModel() {
         data class Error(val message: String) : WebSocketState()
     }
 }
-
-class ContextViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(WebSocket_getfriendsViewModel::class.java)) {
-            @Suppress("UNCHECKED_CAST")
-            return WebSocket_getfriendsViewModel(context) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
-

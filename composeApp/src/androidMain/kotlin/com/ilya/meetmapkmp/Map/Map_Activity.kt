@@ -102,7 +102,6 @@ import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModel
 import com.ilya.meetmapkmp.Map.ViewModel.PersonalizedMarkersViewModelFactory
 import com.ilya.meetmapkmp.R
 import com.ilya.meetmapkmp.SocialMap.SocialMapActivity
-import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 import com.ilya.reaction.logik.PreferenceHelper.getUserKey
 import decodePoly
 import generateUID

@@ -1,5 +1,5 @@
 import android.util.Log
-import com.ilya.meetmapkmp.SocialMap.Interface.WebSocketCallback_frinds
+
 import com.ilya.MeetingMap.SocialMap.DataModel.FindFriends
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -10,71 +10,66 @@ import okio.ByteString
 import org.json.JSONArray
 import java.util.concurrent.TimeUnit
 
-class WebSocketFindFriends(
-    url: String,
-    private val callback: WebSocketCallback_frinds
-) : WebSocketListener() {
 
+
+
+class Websocket_find_friends(
+    private var onMessageReceived: ((String) -> Unit)? = null,
+    private var onErrorOccurred: ((String) -> Unit)? = null
+) {
+    private var webSocket: WebSocket? = null
     private val client = OkHttpClient.Builder()
         .connectTimeout(10, TimeUnit.SECONDS)
         .build()
 
-    private val request = Request.Builder()
-        .url(url)
-        .build()
+    // Метод для подключения к WebSocket
+    fun connect(uid: String, key: String) {
+        val url = "wss://meetmap.up.railway.app/findFriends/$uid/$key"
+        val request = Request.Builder().url(url).build()
 
-    private val webSocket: WebSocket = client.newWebSocket(request, this)
+        webSocket = client.newWebSocket(request, object : WebSocketListener() {
+            override fun onOpen(webSocket: WebSocket, response: Response) {
+                Log.d("WebSocket_friends", "Соединение установлено")
+                webSocket.send("getFriends") // Отправляем команду для получения списка друзей
+            }
 
-    // Метод для отправки команды по WebSocket
-    fun sendCommand(command: String) {
-        Log.d("WebSocket_friends", "Отправка команды: $command")
-        webSocket.send(command)
+            override fun onMessage(webSocket: WebSocket, text: String) {
+                Log.d("WebSocket_friends", "Получено сообщение: $text")
+                onMessageReceived?.invoke(text) // Вызываем функцию обратного вызова для обработки сообщений
+            }
+
+            override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
+                Log.d("WebSocket_friends", "Закрытие соединения: $code / $reason")
+                webSocket.close(1000, null)
+            }
+
+            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                Log.e("WebSocket_friends", "Ошибка соединения: ${t.message}")
+                onErrorOccurred?.invoke(t.message ?: "Unknown error") // Вызываем функцию обратного вызова для обработки ошибок
+            }
+        })
     }
 
-    override fun onOpen(webSocket: WebSocket, response: Response) {
-        Log.d("WebSocket_friends", "Соединение установлено")
-    }
-
-    override fun onMessage(webSocket: WebSocket, text: String) {
-        Log.d("WebSocket_friends", "Получено сообщение: $text")
-        parseFriendList(text)
-    }
-
-    override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-        Log.d("WebSocket_friends", "Получены байты: ${bytes.hex()}")
-    }
-
-    override fun onClosing(webSocket: WebSocket, code: Int, reason: String) {
-        Log.d("WebSocket_friends", "Закрытие соединения: $code / $reason")
-        webSocket.close(1000, null)
-    }
-
-    fun stop() {
-        Log.d("WebSocket_friends", "Закрытие WebSocket соединения")
-        webSocket.close(1000, "Закрытие соединения")
+    // Метод для закрытия WebSocket соединения
+    fun disconnect() {
+        webSocket?.let {
+            Log.d("WebSocket_friends", "Закрытие WebSocket соединения")
+            it.close(1000, "Закрытие соединения")
+        }
         client.dispatcher.executorService.shutdown()
     }
 
-    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-        Log.e("WebSocket_friends", "Ошибка соединения: ${t.message}")
+    // Метод для отправки команды по WebSocket
+    fun sendCommand(command: String) {
+        webSocket?.send(command)
     }
 
-    // Метод для парсинга полученного списка друзей
-    private fun parseFriendList(json: String) {
-        Log.d("WebSocket_friends", "Парсинг списка друзей")
-        val jsonArray = JSONArray(json)
-        val friendsList = mutableListOf<FindFriends>()
-        for (i in 0 until jsonArray.length()) {
-            val jsonObject = jsonArray.getJSONObject(i)
-            val friend = FindFriends(
-                key = jsonObject.getString("key"),
-                name = jsonObject.getString("name"),
-                img = jsonObject.getString("img"),
-                friend = jsonObject.getBoolean("friend")
-            )
-            friendsList.add(friend)
-        }
-        Log.d("WebSocket_friends", "Получен список друзей: ${friendsList.size} друзей")
-        callback.onFriendListReceived(friendsList)
+    // Методы для установки callback-функций
+    fun setOnMessageReceivedListener(listener: (String) -> Unit) {
+        this.onMessageReceived = listener
+    }
+
+    fun setOnErrorOccurredListener(listener: (String) -> Unit) {
+        this.onErrorOccurred = listener
     }
 }

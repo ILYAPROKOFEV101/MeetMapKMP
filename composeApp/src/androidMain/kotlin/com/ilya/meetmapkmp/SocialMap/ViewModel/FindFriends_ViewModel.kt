@@ -3,10 +3,14 @@ package com.ilya.meetmapkmp.SocialMap.ViewModel
 import com.ilya.MeetingMap.SocialMap.DataModel.FindFriends
 import Websocket_find_friends
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilya.meetmapkmp.SocialMap.DATAServices.WebSocketService
+import com.ilya.meetmapkmp.SocialMap.DataModel.Friend
+import com.ilya.platform.DriverFactory
+import com.ilya.platform.di.FriendsRepository
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +26,13 @@ import java.util.concurrent.TimeUnit
 
 class WebSocketViewModel : ViewModel() {
 
+    private val context = AppContextProvider.getContext()
+
+    private val friendsRepository = FriendsRepository(
+        SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("friends.db"), null)
+    )
+
+
     // StateFlow для хранения списка друзей
     private val _friendsList = MutableStateFlow<List<FindFriends>>(emptyList())
     val friendsList: StateFlow<List<FindFriends>> = _friendsList.asStateFlow()
@@ -34,7 +45,10 @@ class WebSocketViewModel : ViewModel() {
     // Инициализация WebSocketManager
     private val webSocketManager = Websocket_find_friends()
 
+
+
     init {
+        DriverFactory(context).createFriendsTable()
         // Установка callback-функций для обработки сообщений и ошибок
         webSocketManager.setOnMessageReceivedListener { message ->
             viewModelScope.launch {
@@ -58,6 +72,11 @@ class WebSocketViewModel : ViewModel() {
     fun disconnect() {
         webSocketManager.disconnect()
     }
+
+    fun addfriends_to_bd(friend: Friend){
+        friendsRepository.insertOrUpdateFriend(friend)
+    }
+
 
     // Метод для отправки команды по WebSocket
     fun sendCommand(command: String) {

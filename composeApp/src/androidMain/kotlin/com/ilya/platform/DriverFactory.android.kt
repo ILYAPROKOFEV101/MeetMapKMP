@@ -49,11 +49,12 @@ actual class DriverFactory(private val context: Context) {
     }
 
 
-    fun createFriendsTable(tableName: String): Boolean {
+    fun createFriendsTable(): Boolean {
         val db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath("friends.db"), null)
         val createTableQuery = """
-        CREATE TABLE IF NOT EXISTS $tableName (
+        CREATE TABLE IF NOT EXISTS friends (
             token TEXT PRIMARY KEY,
+            'key' TEXT,
             img TEXT,
             lastmessage TEXT,
             name TEXT,

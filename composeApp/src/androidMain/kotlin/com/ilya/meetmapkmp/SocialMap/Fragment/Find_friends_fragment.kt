@@ -2,9 +2,8 @@ package com.example.yourapp.ui
 
 
 
-import WebSocketFindFriends
+
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -39,6 +38,11 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
@@ -53,11 +57,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.ViewModelProvider
-
 import com.google.android.gms.auth.api.identity.Identity
 
-import com.ilya.meetmapkmp.SocialMap.Interface.WebSocketCallback_frinds
+
 import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 import com.ilya.codewithfriends.presentation.profile.ID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
@@ -68,14 +70,15 @@ import com.ilya.meetmapkmp.Map.Server_API.POST.addFriends
 import com.ilya.MeetingMap.SocialMap.DataModel.FindFriends
 
 import com.ilya.meetmapkmp.R
-import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
-import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel_data
+import com.ilya.meetmapkmp.SocialMap.DataModel.Friend
+
+import com.ilya.meetmapkmp.SocialMap.ViewModel.WebSocketViewModel
 import com.ilya.meetmapkmp.SocialMap.ui.theme.robotomedium
 import kotlinx.coroutines.*
 import postRequestAddFriends
 
 
-class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
+class Find_friends_fragment : Fragment() {
 
 
     private val googleAuthUiClient by lazy {
@@ -86,20 +89,13 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
     }
 
 
-    private val friendsViewModelData: FriendsViewModel_data by lazy {
-        ViewModelProvider(this).get(FriendsViewModel_data::class.java)
-    }
+    private val WebSocketViewModel: WebSocketViewModel by viewModels()
 
-    private val friendsViewModel: FriendsViewModel by viewModels()
-
-
-    private lateinit var webSocketFindFriends: WebSocketFindFriends
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
 
         return ComposeView(requireContext()).apply {
 
@@ -119,11 +115,16 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
                                     .height(150.dp) // Занимает только необходимое место
                                     .fillMaxWidth()
                             ) {
-                                SearchBar(friendsViewModelData) // Поисковая строка
+                                SearchBar(WebSocketViewModel) // Поисковая строка
                             }
+                     // Собираем friendsList из StateFlow
+                            val friends by WebSocketViewModel.friendsList.collectAsState()
 
-                            // FriendsList займёт оставшееся пространство
-                            FriendsList(friendsViewModelData.friendsList.value)
+
+                                // Отображаем список друзей
+                                FriendsList(friends = friends)
+
+
                         }
                     }
                 }
@@ -134,44 +135,21 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
     }
 
 
-    override fun onStart() {
-        super.onStart()
-        val uid = ID(
-            userData = googleAuthUiClient.getSignedInUser()
-        )
-        val key = getUserKey(requireContext())
-        if (key != null && uid != null) {
-            webSocketFindFriends =
-                WebSocketFindFriends("wss://meetmap.up.railway.app/findFriends/$uid/$key", this)
-            Log.d(
-                "Websocket_friends",
-                "wss://meetmap.up.railway.app/findFriends/$uid/$key"
-            )
-        }
 
-    }
 
-    override fun onStop() {
-        super.onStop()
-        // Отключаемся от WebSocket, как только фрагмент становится невидимым
-        webSocketFindFriends.stop()
-    }
-
-    override fun onFriendListReceived(friends: List<FindFriends>) {
-        friendsViewModelData.updateFriendsList(friends)
-        Log.d("Websocket_friends", friends.toString())
-    }
 
     @OptIn(ExperimentalMaterial3Api::class, DelicateCoroutinesApi::class)
     @Composable
-    fun SearchBar(viewModel: FriendsViewModel_data) { // Передаем ViewModel в функцию
-        val keyboardControllers = LocalSoftwareKeyboardController.current
+    fun SearchBar(webSocketViewModel: WebSocketViewModel) {
+        val keyboardController = LocalSoftwareKeyboardController.current
+        var name by remember { mutableStateOf("") } // Текущее значение ввода
+        var lastSentName by remember { mutableStateOf("") } // Последнее отправленное значение
 
-        SocialMap { // Оборачиваем в нашу кастомную тему
+        SocialMap {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background) // Цвет зависит от темы
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(start = 30.dp, end = 30.dp),
             ) {
                 Spacer(modifier = Modifier.height(10.dp))
@@ -182,7 +160,6 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
                     textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth()
                 )
-                // Поле ввода
                 TextField(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -194,39 +171,43 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
                             ),
                             shape = RoundedCornerShape(20.dp)
                         ),
-                    value = viewModel.username,
-                    onValueChange = {
-                        viewModel.updateUsername(it)
+                    value = name,
+                    onValueChange = { newValue ->
+                        name = newValue // Обновляем состояние при изменении
                     },
                     textStyle = MaterialTheme.typography.bodyLarge,
-                        colors = TextFieldDefaults.colors(
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            focusedIndicatorColor = MaterialTheme.colorScheme.surface,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
-                            cursorColor = MaterialTheme.colorScheme.onSurface,
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface
-                        ),
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedIndicatorColor = MaterialTheme.colorScheme.surface,
+                        unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurface,
+                        cursorColor = MaterialTheme.colorScheme.onSurface,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface
+                    ),
                     keyboardOptions = KeyboardOptions(
                         imeAction = ImeAction.Search,
                         keyboardType = KeyboardType.Text
                     ),
                     keyboardActions = KeyboardActions(
                         onSearch = {
-                            keyboardControllers?.hide()
-                            webSocketFindFriends.sendCommand("findFriends ${viewModel.username}")
+                            keyboardController?.hide() // Скрываем клавиатуру
+                            if (name.isNotEmpty() && name != lastSentName) {
+                                webSocketViewModel.sendCommand("findFriends $name") // Отправляем команду
+                                lastSentName = name // Обновляем последнее отправленное значение
+                            }
                         }
                     ),
                 )
             }
-        }
 
-        LaunchedEffect(key1 = viewModel.username) {
-            while (isActive) {
-                delay(3000)  // Ждем 3 секунды
-                // Отправляем команду каждые 3 секунды
-                if (viewModel.username.isNotEmpty()) {
-                    webSocketFindFriends.sendCommand("findFriends ${viewModel.username}")
+            // Автоматическая отправка каждые 3 секунды, если поле не пустое и значение изменилось
+            LaunchedEffect(key1 = name) {
+                while (isActive) {
+                    delay(3000) // Ждем 3 секунды
+                    if (name.isNotEmpty() && name != lastSentName) {
+                        webSocketViewModel.sendCommand("findFriends $name") // Отправляем команду
+                        lastSentName = name // Обновляем последнее отправленное значение
+                    }
                 }
             }
         }
@@ -310,7 +291,18 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
                         .wrapContentHeight(),
                     onClick = {
                         CoroutineScope(Dispatchers.IO).launch {
-                            postRequestAddFriends(uid.toString(), key = getUserKey(requireContext()).toString(), friendKey = friend.key)
+
+                            val token = postRequestAddFriends(uid.toString(), key = getUserKey(requireContext()).toString(), friendKey = friend.key)
+                            val data = Friend(
+                                key = friend.key,
+                                name = friend.name,
+                                img = friend.img,
+                                token = token.toString(),
+                                lastmessage = "",
+                                online = false
+                            )
+                            //   friendsRepository.insertOrUpdateFriend(data)
+                                WebSocketViewModel.addfriends_to_bd(data)
                             addFriends(uid.toString(), key = getUserKey(requireContext()).toString(), friendKey = friend.key)
                         }
                     },
@@ -327,6 +319,23 @@ class Find_friends_fragment : Fragment(), WebSocketCallback_frinds {
                 }
             }
         }
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        val uid = ID(userData = googleAuthUiClient.getSignedInUser())
+        val key = getUserKey(requireContext())
+        if (key != null && uid != null) {
+            WebSocketViewModel.connect(uid, key)
+        }
+
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Отключаемся от WebSocket, как только фрагмент становится невидимым
+        WebSocketViewModel.disconnect()
     }
 
 }

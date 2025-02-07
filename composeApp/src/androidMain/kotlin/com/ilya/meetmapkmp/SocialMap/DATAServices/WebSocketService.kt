@@ -11,26 +11,20 @@ import okhttp3.WebSocketListener
 import okhttp3.logging.HttpLoggingInterceptor
 import java.util.concurrent.TimeUnit
 
-interface WebSocketListenerCallback {
-    fun onMessageReceived(message: String)
-    fun onErrorOccurred(error: String)
-}
 
-class WebSocketService(private val callback: WebSocketListenerCallback, private val context: Context) {
-
+class WebSocketService(
+    private var onMessageReceived: ((String) -> Unit)? = null,
+    private var onErrorOccurred: ((String) -> Unit)? = null
+) {
     private var webSocket: WebSocket? = null
     private var uid: String? = null
     private var key: String? = null
-
-
 
     companion object {
         private const val TAG = "WebSocketService" // Тег для логов
     }
 
-
-
-
+    // Метод для подключения к WebSocket
     fun connect(uid: String, key: String) {
         this.uid = uid
         this.key = key
@@ -38,17 +32,14 @@ class WebSocketService(private val callback: WebSocketListenerCallback, private 
         connectWebSocket()
     }
 
-
-
     private fun connectWebSocket() {
         if (uid == null || key == null) {
             Log.e(TAG, "UID or Key is null. Cannot connect WebSocket.")
-            callback.onErrorOccurred("UID or Key is null.")
+            onErrorOccurred?.invoke("UID or Key is null.")
             return
         }
 
-            val url = "wss://meetmap.up.railway.app/get-friends/$uid/$key"
-        //val url = "wss://meetmap.up.railway.app/get-friends/NL85HoOb7FVYP8oDsPu1z9oml1o2/6GkAx0f6cJcWCmihMTpTe41IsqFMIV"
+        val url = "wss://meetmap.up.railway.app/get-friends/$uid/$key"
         val request = Request.Builder()
             .url(url)
             .build()
@@ -60,7 +51,7 @@ class WebSocketService(private val callback: WebSocketListenerCallback, private 
             })
             .build()
 
-        val webSocketListener = object : WebSocketListener() {
+        webSocket = client.newWebSocket(request, object : WebSocketListener() {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 Log.i(TAG, "WebSocket connection opened. Sending initial request for friends...")
                 webSocket.send("getFriends")
@@ -68,36 +59,41 @@ class WebSocketService(private val callback: WebSocketListenerCallback, private 
 
             override fun onMessage(webSocket: WebSocket, text: String) {
                 Log.d(TAG, "Message received from server: $text")
-                callback.onMessageReceived(text) // Передача сообщения через интерфейс
-
+                onMessageReceived?.invoke(text) // Вызываем callback для обработки сообщений
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                 Log.e(TAG, "WebSocket connection failed: ${t.message}", t)
-                callback.onErrorOccurred(t.message ?: "Unknown error") // Обработка ошибок через интерфейс
+                onErrorOccurred?.invoke(t.message ?: "Unknown error") // Вызываем callback для обработки ошибок
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                 Log.w(TAG, "WebSocket closed with code: $code, reason: $reason")
             }
-        }
+        })
 
-        try {
-            webSocket = client.newWebSocket(request, webSocketListener)
-            Log.d(TAG, "WebSocket connection initiated to URL: $url")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to initiate WebSocket connection: ${e.message}", e)
-            callback.onErrorOccurred("Failed to connect: ${e.message}")
-        }
+        Log.d(TAG, "WebSocket connection initiated to URL: $url")
     }
 
-    fun closeWebSocket() {
+    // Метод для закрытия WebSocket соединения
+    fun disconnect() {
         webSocket?.let {
             Log.d(TAG, "Closing WebSocket connection")
             it.close(1000, "Service destroyed")
         } ?: Log.w(TAG, "Attempted to close WebSocket but it was not initialized")
     }
 
+    // Метод для отправки команды по WebSocket
+    fun sendCommand(command: String) {
+        webSocket?.send(command)
+    }
 
+    // Методы для установки callback-функций
+    fun setOnMessageReceivedListener(listener: (String) -> Unit) {
+        this.onMessageReceived = listener
+    }
 
+    fun setOnErrorOccurredListener(listener: (String) -> Unit) {
+        this.onErrorOccurred = listener
+    }
 }

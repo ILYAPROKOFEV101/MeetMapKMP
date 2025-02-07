@@ -27,7 +27,6 @@ import com.google.android.gms.auth.api.identity.Identity
 
 import com.ilya.meetmapkmp.SocialMap.Interface.MyDataProvider
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
-import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 
 import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 import com.ilya.codewithfriends.presentation.profile.ID
@@ -49,7 +48,6 @@ class Chat_with_Friends_fragment : Fragment() {
         ViewModelProvider(this, ChatViewModelFactory(requireContext())).get(ChatViewModel::class.java)
     }
 
-    private val friendsViewModel: FriendsViewModel by viewModels()
 
 
 
