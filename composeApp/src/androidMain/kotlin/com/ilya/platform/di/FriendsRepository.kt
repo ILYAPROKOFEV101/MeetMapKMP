@@ -62,6 +62,12 @@ class FriendsRepository(private val database: SQLiteDatabase) {
 
     fun insertOrUpdateFriend(friend: Friend) {
         try {
+            // Проверяем, что данные валидны
+            if (!isValidFriend(friend)) {
+                Log.e("FriendsRepository", "Invalid friend data: $friend")
+                return
+            }
+
             val cursor = database.rawQuery("SELECT * FROM $TABLE_NAME WHERE token = ?", arrayOf(friend.token))
             if (cursor.count > 0) {
                 cursor.close()
@@ -136,5 +142,13 @@ class FriendsRepository(private val database: SQLiteDatabase) {
         }
         cursor.close()
         return friendsList
+    }
+
+
+    private fun isValidFriend(friend: Friend): Boolean {
+        return !(friend.token.isNullOrEmpty() || friend.token == "null" ||
+                friend.key.isNullOrEmpty() || friend.key == "null" ||
+                friend.img.isNullOrEmpty() || friend.img == "null" ||
+                friend.name.isNullOrEmpty() || friend.name == "null")
     }
 }

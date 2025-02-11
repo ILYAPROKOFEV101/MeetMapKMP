@@ -62,50 +62,76 @@
             map:srcCompat="@drawable/search_24px" />
     </LinearLayout>
 
-<LinearLayout
-        android:layout_width="69dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="235dp"
         android:layout_gravity="center|right"
-
         android:orientation="vertical">
 
+        <!-- Кнопки карты -->
         <ImageView
             android:id="@+id/btnStandard"
-            android:layout_width="match_parent"
+            android:layout_width="69dp"
             android:layout_height="59dp"
-            android:padding="5.dp"
+            android:padding="5dp"
             android:onClick="onStandardButtonClick"
+            android:layout_gravity="end"
             android:contentDescription="обычная карта"
             map:srcCompat="@drawable/map_24px" />
 
         <ImageView
             android:id="@+id/btnSatellite"
-            android:layout_width="match_parent"
+            android:layout_width="59dp"
             android:layout_height="59dp"
-            android:padding="5.dp"
+            android:padding="5dp"
             android:onClick="onSatelliteButtonClick"
             android:contentDescription="Спутник"
+            android:layout_gravity="end"
             map:srcCompat="@drawable/satellite" />
 
+        <!-- Горизонтальный контейнер -->
+        <LinearLayout
+            android:id="@+id/horizontalContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="57dp"
+            android:layout_gravity="end"
+            android:orientation="horizontal">
+
+            <!-- Скрытые кнопки -->
+            <ImageView
+                android:id="@+id/button2"
+                android:layout_width="57dp"
+                android:layout_height="57dp"
+                android:src="@drawable/directions_car_24px"
+                android:visibility="gone" />
+
+            <ImageView
+                android:id="@+id/button3"
+                android:layout_width="57dp"
+                android:layout_height="57dp"
+                android:src="@drawable/directions_walk_24px"
+                android:visibility="gone" />
+
+            <!-- Кнопка, которая будет тянуться -->
+            <ImageView
+                android:id="@+id/routeButton"
+                android:layout_width="62dp"
+                android:layout_gravity="end"
+                android:layout_height="57dp"
+                android:src="@drawable/directions_bike_24px" />
+        </LinearLayout>
+
+        <!-- Кнопка социальных функций -->
         <ImageView
-            android:id="@+id/routeButton"
-            android:layout_width="match_parent"
-            android:layout_height="57dp"
-            android:contentDescription="Проложить маршрут"
-            android:onClick="onSatelliteButtonClick"
-            android:padding="5.dp"
-            android:text="Проложить маршрут"
-            map:srcCompat="@drawable/explore_24px" />
-    <ImageView
             android:id="@+id/social"
-            android:layout_width="match_parent"
+            android:layout_width="69dp"
             android:layout_height="57dp"
             android:contentDescription="Проложить маршрут"
             android:onClick="onSatelliteButtonClick"
-            android:padding="5.dp"
+            android:padding="5dp"
+            android:layout_gravity="end"
             android:text="Проложить маршрут"
             map:srcCompat="@drawable/group24px" />
-
     </LinearLayout>
 
     <!-- Обертка для текстовых полей -->

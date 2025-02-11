@@ -48,6 +48,7 @@ class WebSocketViewModel : ViewModel() {
 
 
     init {
+
         DriverFactory(context).createFriendsTable()
         // Установка callback-функций для обработки сообщений и ошибок
         webSocketManager.setOnMessageReceivedListener { message ->
@@ -61,6 +62,7 @@ class WebSocketViewModel : ViewModel() {
                 _errors.value = error
             }
         }
+
     }
 
     // Метод для подключения к WebSocket

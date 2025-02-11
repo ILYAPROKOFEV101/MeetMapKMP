@@ -24,6 +24,8 @@ import android.os.Looper
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.animation.Animation
+import android.view.animation.TranslateAnimation
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
@@ -169,6 +171,11 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     private var isItemDecorationAdded = false // Флаг
     private val webSocketManager = WebSocketManager(client, this)
     val markerDataMap: MutableMap<Marker, MarkerData> = ConcurrentHashMap()
+    private lateinit var button2: View
+    private lateinit var button3: View
+    private lateinit var routeButton: View
+    private var isExpanded = false // Флаг для отслеживания состояния
+
 
     private companion object {
         private const val MY_PERMISSIONS_REQUEST_LOCATION = 1
@@ -187,6 +194,11 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
     override fun onCreate(savedInstanceState: Bundle?)  {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_map)
+
+
+        button2 = findViewById(R.id.button2)
+        button3 = findViewById(R.id.button3)
+        routeButton = findViewById(R.id.routeButton)
 
 
        var PersonalizedMarkersViewModel = ViewModelProvider(
@@ -511,7 +523,7 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
 
         val locationAutoCompleteTextView = findViewById<AutoCompleteTextView>(R.id.locationAutoCompleteTextView)
         val findButton = findViewById<ImageView>(R.id.findButton)
-        val routeButton = findViewById<ImageView>(R.id.routeButton)
+        //+val routeButton = findViewById<ImageView>(R.id.routeButton)
         val socialbutton = findViewById<ImageView>(R.id.social)
 
 
@@ -614,22 +626,82 @@ class Map_Activity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnPolyli
                         // Инициализация объекта Polyline
                         polyline = mMap.addPolyline(PolylineOptions().width(5f).color(android.graphics.Color.BLUE))
 
+
                         var isRouteDrawn = false
+//                        routeButton.setOnClickListener {
+//                            if (isRouteDrawn) {
+//                                currentPolyline?.remove()
+//                                removeMarkers()
+//                                isRouteDrawn = false
+//                            } else {
+//                                findLocation_route()
+//                                isRouteDrawn = true
+//                            }
+//                        }
+                        // Установка обработчика нажатия на кнопку
                         routeButton.setOnClickListener {
-                            if (isRouteDrawn) {
-                                currentPolyline?.remove()
-                                removeMarkers()
-                                isRouteDrawn = false
+                            if (isExpanded) {
+                                collapseMenu()
                             } else {
-                                findLocation_route()
-                                isRouteDrawn = true
+                                expandMenu()
                             }
+                            isExpanded = !isExpanded
                         }
                     }
                 }
             }, 200) // Задержка в 0.2 секунду перед выполнением кода
         }
     }
+
+    // Метод для раскрытия меню
+    private fun expandMenu() {
+        // Показать кнопки
+        button2.visibility = View.VISIBLE
+        button3.visibility = View.VISIBLE
+
+        // Анимация перемещения кнопок влево
+        val animationButton2 = TranslateAnimation(0f, -60f, 0f, 0f).apply {
+            duration = 400
+            fillAfter = true
+        }
+        button2.startAnimation(animationButton2)
+
+        val animationButton3 = TranslateAnimation(0f, -120f, 0f, 0f).apply {
+            duration = 400
+            fillAfter = true
+        }
+        button3.startAnimation(animationButton3)
+    }
+
+    // Метод для сворачивания меню
+    private fun collapseMenu() {
+        // Анимация перемещения кнопок вправо
+        val animationButton2 = TranslateAnimation(-60f, 0f, 0f, 0f).apply {
+            duration = 400
+            setAnimationListener(object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {}
+                override fun onAnimationEnd(animation: Animation?) {
+                    button2.visibility = View.GONE
+                }
+                override fun onAnimationRepeat(animation: Animation?) {}
+            })
+        }
+        button2.startAnimation(animationButton2)
+
+        val animationButton3 = TranslateAnimation(-120f, 0f, 0f, 0f).apply {
+            duration = 200
+            setAnimationListener(object : Animation.AnimationListener {
+                override fun onAnimationStart(animation: Animation?) {}
+                override fun onAnimationEnd(animation: Animation?) {
+                    button3.visibility = View.GONE
+                }
+                override fun onAnimationRepeat(animation: Animation?) {}
+            })
+        }
+        button3.startAnimation(animationButton3)
+    }
+
+
     override fun removeSpecificMarker(markerData: MarkerData) {
         Handler(Looper.getMainLooper()).post {
             Log.d("RemoveMarker", "Попытка удалить маркер с id=${markerData.id}")

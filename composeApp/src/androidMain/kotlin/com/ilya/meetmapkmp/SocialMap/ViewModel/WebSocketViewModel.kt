@@ -103,6 +103,7 @@ class WebSocket_getfriendsViewModel : ViewModel() {
             _webSocketState.value = WebSocketState.Error("WebSocket is not connected")
         }
     }
+
     fun deletefriends_from_bd(token: String){
         friendsRepository.deleteFriendByToken(token)
     }

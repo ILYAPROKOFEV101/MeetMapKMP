@@ -3,6 +3,7 @@ package com.ilya.meetmapkmp.SocialMap.ui.UI_Layers
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -29,15 +32,21 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +62,7 @@ import com.ilya.meetmapkmp.SocialMap.Interface.MyDataProvider
 import com.ilya.meetmapkmp.SocialMap.ViewModel.WebSocket_getfriendsViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
@@ -87,24 +97,33 @@ fun FriendItem(
     navController: NavController,
     context: android.content.Context,
     WebSocket_getfriendsViewModel: WebSocket_getfriendsViewModel
+
 ) {
     // Получаем текущую цветовую схему
     val colorScheme = MaterialTheme.colorScheme
     val backgroundColor = if (isSystemInDarkTheme()) colorScheme.surface else Color.White
     val textColor = if (isSystemInDarkTheme()) colorScheme.onSurface else Color.Black
 
+    // Состояние для показа диалогового окна
+    var showDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .height(80.dp)
-            .clickable(
-                indication = null,
-                interactionSource = remember { MutableInteractionSource() }
-            ) {
-                Log.d("Save_token", "сохраняю токен: ${friend.token}")
-                val dataProvider = MyDataProvider(context)
-                dataProvider.saveToken(friend.token) // Store the token
-                navController.navigate("Chat")
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        Log.d("Save_token", "сохраняю токен: ${friend.token}")
+                        val dataProvider = MyDataProvider(context)
+                        dataProvider.saveToken(friend.token) // Store the token
+                        navController.navigate("Chat")
+                    },
+                    onLongPress = {
+                        // Долгое нажатие
+                        showDialog = true // Показываем диалог
+                    }
+                )
             },
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         shape = RectangleShape
@@ -147,19 +166,25 @@ fun FriendItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            IconButton(
-                onClick = {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        WebSocket_getfriendsViewModel.deletefriends_from_bd(friend.token)
-                    }
-                }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Удалить друга",
-                    tint = Color.Red // Цвет иконки удаления
-                )
-            }
         }
+    }
+
+    // Показываем диалоговое окно, если showDialog == true
+    if (showDialog) {
+        AlertDialogExample(
+            onDismissRequest = {
+                showDialog = false
+            }, // Закрыть диалог
+            onConfirmation = {
+                CoroutineScope(Dispatchers.IO).launch {
+                    WebSocket_getfriendsViewModel.deletefriends_from_bd(friend.token)
+                    WebSocket_getfriendsViewModel.sendCommand("delete ${friend.token}")
+                }
+                showDialog = false // Закрыть диалог после подтверждения
+            },
+            dialogTitle = "Подтверждение",
+            dialogText = "Вы уверены, что хотите удалить этого друга?",
+            icon = Icons.Default.Warning
+        )
     }
 }

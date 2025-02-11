@@ -4,6 +4,7 @@ package com.example.yourapp.ui
 
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -291,19 +292,41 @@ class Find_friends_fragment : Fragment() {
                         .wrapContentHeight(),
                     onClick = {
                         CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                // Выполняем асинхронный запрос для получения токена
+                                val tokenDeferred = async {
+                                    postRequestAddFriends(
+                                        uid.toString(),
+                                        key = getUserKey(requireContext()).toString(),
+                                        friendKey = friend.key
+                                    )
+                                }
 
-                            val token = postRequestAddFriends(uid.toString(), key = getUserKey(requireContext()).toString(), friendKey = friend.key)
-                            val data = Friend(
-                                key = friend.key,
-                                name = friend.name,
-                                img = friend.img,
-                                token = token.toString(),
-                                lastmessage = "",
-                                online = false
-                            )
-                            //   friendsRepository.insertOrUpdateFriend(data)
+                                // Дожидаемся завершения запроса и получаем токен
+                                val token = tokenDeferred.await()
+
+                                // Создаем объект Friend с полученным токеном
+                                val data = Friend(
+                                    key = friend.key,
+                                    name = friend.name,
+                                    img = friend.img,
+                                    token = token.toString(),
+                                    lastmessage = "",
+                                    online = false
+                                )
+
+                                // Добавляем друга в базу данных
                                 WebSocketViewModel.addfriends_to_bd(data)
-                            addFriends(uid.toString(), key = getUserKey(requireContext()).toString(), friendKey = friend.key)
+
+                                // Выполняем дополнительные действия (например, добавление в чат)
+                                addFriends(
+                                    uid.toString(),
+                                    key = getUserKey(requireContext()).toString(),
+                                    friendKey = friend.key
+                                )
+                            } catch (e: Exception) {
+                                Log.e("FriendsRepository", "Error adding friend: ${e.message}")
+                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(
