@@ -33,6 +33,8 @@ class WebSocketViewModel : ViewModel() {
     )
 
 
+
+
     // StateFlow для хранения списка друзей
     private val _friendsList = MutableStateFlow<List<FindFriends>>(emptyList())
     val friendsList: StateFlow<List<FindFriends>> = _friendsList.asStateFlow()
@@ -79,6 +81,9 @@ class WebSocketViewModel : ViewModel() {
         friendsRepository.insertOrUpdateFriend(friend)
     }
 
+    fun getFriends_by_token(token: String) : Friend? {
+        return friendsRepository.getFriendByToken(token)
+    }
 
     // Метод для отправки команды по WebSocket
     fun sendCommand(command: String) {
