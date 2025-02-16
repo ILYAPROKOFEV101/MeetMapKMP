@@ -27,7 +27,6 @@ import com.google.android.gms.auth.api.identity.Identity
 
 import com.ilya.meetmapkmp.SocialMap.Interface.MyDataProvider
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModel
-import com.ilya.meetmapkmp.SocialMap.ViewModel.FriendsViewModel
 
 import com.ilya.meetmapkmp.SocialMap.ui.theme.SocialMap
 import com.ilya.codewithfriends.presentation.profile.ID
@@ -36,6 +35,7 @@ import com.ilya.codewithfriends.presentation.profile.UID
 import com.ilya.codewithfriends.presentation.sign_in.GoogleAuthUiClient
 import com.ilya.meetmapkmp.SocialMap.DATAServices.Chat_Service.ChatWebSocketService
 import com.ilya.meetmapkmp.SocialMap.ViewModel.ChatViewModelFactory
+import com.ilya.meetmapkmp.SocialMap.ViewModel.WebSocketViewModel
 
 import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.DeleteMessage
 import com.ilya.meetmapkmp.SocialMap.ui.UI_Layers.MessageList
@@ -49,7 +49,6 @@ class Chat_with_Friends_fragment : Fragment() {
         ViewModelProvider(this, ChatViewModelFactory(requireContext())).get(ChatViewModel::class.java)
     }
 
-    private val friendsViewModel: FriendsViewModel by viewModels()
 
 
 
@@ -69,6 +68,7 @@ class Chat_with_Friends_fragment : Fragment() {
         return ComposeView(requireContext()).apply {
 
             setContent {
+                 val WebSocketViewModel: WebSocketViewModel by viewModels()
 
 
                 val name = UID(userData = googleAuthUiClient.getSignedInUser())
@@ -83,12 +83,13 @@ class Chat_with_Friends_fragment : Fragment() {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(top = 50.dp) // Отступ сверху
                         ) {
                             NavHost(navController = navController, startDestination = "Friend") {
                                 composable("Friend")
                                 {
-                                    Upbar("https://imlhstamcqwacpgldxsf.supabase.co/storage/v1/object/public/avatars/9274c212-c82c-41e4-9fae-2d930c8c730f.png", "Ilya", "12:00")
+                                    // Верхний блок с данными пользователя
+                                    val userInfo = WebSocketViewModel.getFriends_by_token(token.toString())
+                                    Upbar(Modifier, userInfo?.img.toString(), userInfo?.name.toString(), userInfo?.online.toString())
                                 }
                                 composable("delete")
                                 {
